@@ -9,17 +9,28 @@ workflows:
 
     environment:
       xcode: 26.6
+      vars:
+        P12_PASSWORD: gameforge-p12
 
     scripts:
-      - name: Inspect signing state
+      - name: Manual signing test
         script: |
           mkdir -p build
           export HOMEBREW_NO_AUTO_UPDATE=1
           {
-            echo "=== certificates help ==="
-            app-store-connect certificates create --help || true
-            echo "=== profiles help ==="
-            app-store-connect profiles create --help || true
+            echo "=== create distribution certificate ==="
+            app-store-connect certificates create \
+              --type IOS_DISTRIBUTION \
+              --p12-path "$CM_BUILD_DIR/build/gameforge-dist.p12" \
+              --p12-password "$P12_PASSWORD" \
+              --json || true
+            echo "=== import p12 into keychain ==="
+            security import "$CM_BUILD_DIR/build/gameforge-dist.p12" \
+              -k ~/Library/Keychains/login.keychain-db \
+              -P "$P12_PASSWORD" -T /usr/bin/codesign || true
+            security find-identity -v -p codesigning || true
+            echo "=== list distribution certs ==="
+            app-store-connect certificates list --type IOS_DISTRIBUTION --json || true
           } 2>&1 | tee build/debug-signing.log
 
     artifacts:
