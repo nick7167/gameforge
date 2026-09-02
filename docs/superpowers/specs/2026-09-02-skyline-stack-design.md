@@ -148,21 +148,29 @@ Follows the repo's golden rule — logic in GameCore, rendering in the app:
 - **`Sources/App`**: root navigation, StoreKit 2 purchase flow, ad SDK wrapper
   (rewarded only), Game Center sign-in.
 
-### 7.1 Backend — Cloudflare (thin, optional at runtime)
+### 7.1 Backend — none (v1)
 
-The game is **fully playable offline**. Cloudflare adds convenience, not
-dependency:
+**Decision: zero backend.** The game is fully offline-capable and needs no
+server, no database, no Cloudflare deployment:
 
-| Component | Service | Purpose |
+| Concern | Solution | Backend needed? |
 |---|---|---|
-| Remote config | Worker + KV | Economy tuning, feature flags — no app update needed |
-| Content pack delivery | R2 | District/location packs download at runtime |
-| Telemetry | Worker → D1 | Funnel events, crash-free stats (privacy-label-safe, no PII) |
-| (Future) global services | Worker + D1 | Cross-device sync, custom leaderboards if Game Center ever insufficient |
+| IAP purchase + validation | StoreKit 2 (on-device, Apple-hosted) | ❌ |
+| Ads (rewarded video) | Ad SDK (Google AdMob) — talks to Google directly | ❌ |
+| Leaderboards | Game Center | ❌ |
+| Saves / skyline meta | Local + iCloud key-value store | ❌ |
+| Daily challenge | Date-derived seed (`SeededGenerator`) | ❌ |
+| Content packs | Bundled in the app binary | ❌ |
+| Economy tuning | App Store update (acceptable for v1) | ❌ |
 
-- Worker endpoints are read-only for clients except anonymous telemetry.
-- No accounts, no PII, no user data stored in v1. App Store privacy label:
-  "Data not collected" (or minimal usage data if telemetry ships).
+**Consequences of no backend:**
+- District/location packs are bundled in the app (small 3D assets — fine).
+- Economy changes require an app update (fine at v1 scale; revisit remote
+  config via Cloudflare Workers + KV later if tuning becomes frequent).
+- No telemetry in v1 — App Store privacy label: "Data not collected".
+  (Analytics can be added later via a thin Cloudflare Worker if wanted.)
+
+This keeps v1 maximally simple: the app is the whole product.
 
 ## 8. v1 Scope
 
@@ -175,7 +183,8 @@ dependency:
 - Persistent skyline meta, daily seeded challenge (Game Center leaderboard),
   ~10 cosmetic district skins (2 free via rewarded ad)
 - Height milestones, share sheet for collapse clips
-- Cloudflare Worker: remote config + telemetry; R2 pack delivery
+- **No backend** — StoreKit 2 IAP, AdMob rewarded ads, Game Center, iCloud
+  saves; packs bundled in the app
 
 **Out (v2+):**
 - Versus/async multiplayer (Tricky Towers-style — big opportunity, needs
@@ -189,7 +198,8 @@ dependency:
   machine, economy math, daily seed determinism. Sendable-clean under Swift 6.
 - App: XCTest smoke tests (scene loads, UI navigation) in CI.
 - Physics feel: manual pass on device via TestFlight
-  (`./scripts/trigger-testflight.sh`), tuned via remote config where possible.
+  (`./scripts/trigger-testflight.sh`); economy constants are compile-time
+  (no backend) — tune via app updates.
 
 ## 10. Success Criteria
 
