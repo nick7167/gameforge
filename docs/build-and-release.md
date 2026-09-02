@@ -17,19 +17,20 @@ No Xcode is needed on the local Mac. All Swift verification runs in CI.
 
 ## Shipping to the phone
 
+Prerequisite: the App Store Connect app record exists (see "One-time
+manual setup" below). Until it exists, Codemagic builds fail at signing
+with "No matching profiles found" — this is expected and resolved by the
+manual step.
+
 1. Trigger the Codemagic workflow:
 
 ```bash
-set -a; source ~/chameleon-ios/.env.local; set +a
-curl -s -X POST -H "Content-Type: application/json" -H "x-auth-token: $CODEMAGIC_API_TOKEN" \
-  -d '{"appId": "<APP_ID>", "workflowId": "gameforge-testflight", "branch": "main"}' \
-  https://api.codemagic.io/builds
+./scripts/trigger-testflight.sh          # builds main, streams status
+./scripts/trigger-testflight.sh mybranch # or another branch
 ```
 
-`<APP_ID>` is the Codemagic application ID (list with
-`GET https://api.codemagic.io/apps`). Poll
-`GET https://api.codemagic.io/builds/<BUILD_ID>` for status; the status
-field moves `queued → building → finished` (`status: true` = success).
+(Codemagic application ID `6a983f614174f1fe53ef6630`, workflow
+`gameforge-testflight`. The raw API call is documented in `AGENTS.md`.)
 
 2. The finished build is uploaded to TestFlight automatically
    (`submit_to_testflight: true`).
@@ -67,11 +68,15 @@ certificate; `xcode-project use-profiles` fetches/generates profiles for
    - Primary language: English (U.S.) (or Danish)
    - Bundle ID: `dev.adrez.gameforge`
    - SKU: `GAMEFORGE-IOS-001`
-2. Trigger a Codemagic build (see "Shipping to the phone"); it now
-   uploads to TestFlight automatically.
+2. Trigger a Codemagic build: `./scripts/trigger-testflight.sh` — it now
+   signs and uploads to TestFlight automatically.
 3. On the iPhone: open TestFlight → the build appears under the account
    holder's Apple ID automatically (internal tester via the default
    "App Store Connect Users" group).
+
+> Optional local dev improvement: run `./scripts/fix-local-clt.sh`
+> (requires sudo) to repair the corrupted Command Line Tools so
+> `swift test` works locally too.
 
 
 ## Versioning

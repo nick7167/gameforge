@@ -72,16 +72,24 @@ project, runs GameCore tests, applies signing, builds a signed IPA and
 uploads it to TestFlight. Trigger it after changes you want on the phone:
 
 ```bash
+./scripts/trigger-testflight.sh            # build main, stream status
+```
+
+Codemagic application ID: `6a983f614174f1fe53ef6630` (repo
+`nick7167/gameforge`). Raw trigger:
+
+```bash
 set -a; source ~/chameleon-ios/.env.local; set +a
-# repo id: discover with: curl -s -H "x-auth-token: $CODEMAGIC_API_TOKEN" https://api.codemagic.io/apps
 curl -s -X POST -H "Content-Type: application/json" -H "x-auth-token: $CODEMAGIC_API_TOKEN" \
-  -d '{"appId": "<APP_ID>", "workflowId": "gameforge-testflight", "branch": "main"}' \
+  -d '{"appId": "6a983f614174f1fe53ef6630", "workflowId": "gameforge-testflight", "branch": "main"}' \
   https://api.codemagic.io/builds
 # watch: curl -s -H "x-auth-token: $CODEMAGIC_API_TOKEN" https://api.codemagic.io/builds/<BUILD_ID>
 ```
 
-The build lands in TestFlight; the owner tests on a physical iPhone
-(TestFlight is installed; the owner is an internal tester).
+Note: signed builds require the App Store Connect **app record** to exist
+(API keys cannot create app records). If it is missing, builds fail with
+"No matching profiles found" — see docs/build-and-release.md for the
+one-time manual setup.
 
 ### App Store Connect API (`scripts/asc-api.py`)
 
