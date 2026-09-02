@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "receiving-code-review",
+  "owner": "obra",
+  "repo": "superpowers",
+  "path": "skills/receiving-code-review",
+  "branch": "main",
+  "sha": "b5e154fc3ec7a6a0b1e710eebacc2168620cc428",
+  "source": "manual"
+}

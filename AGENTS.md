@@ -25,6 +25,20 @@ pipeline that delivers TestFlight builds to the owner's physical iPhone.
 
 If a rule can be expressed without a screen, it belongs in GameCore.
 
+## Agent skills
+
+Installed skills live in **`.github/skills/`** (VS Code / GitHub Copilot
+convention — each skill is a folder with a `SKILL.md`). A mirrored copy is
+kept in `.claude/skills/` for Claude Code compatibility. Both are committed.
+
+When adding/updating skills via skillfish, install into one folder and copy
+to the other:
+
+```bash
+npx skillfish add <owner>/<repo> [skill] --project -y --force < /dev/null
+cp -R .claude/skills/. .github/skills/   # or back
+```
+
 ## Commands
 
 Local machine (Linux dev container, Ubuntu 24.04, 4 cores / 15 GB RAM):

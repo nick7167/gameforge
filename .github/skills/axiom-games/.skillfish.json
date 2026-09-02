@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "axiom-games",
+  "owner": "charleswiltgen",
+  "repo": "axiom",
+  "path": ".claude-plugin/plugins/axiom/skills/axiom-games",
+  "branch": "main",
+  "sha": "3093957bdab217b725cf87876b64cfda89a96f5c",
+  "source": "manual"
+}
