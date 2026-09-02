@@ -88,7 +88,7 @@ final class TowerScene: SCNScene {
     pendingType = type
     let node = makeNode(for: type)
     node.name = "pending"
-    node.position = SCNVector3(CGFloat(-gridHalf), CGFloat(Float(placedCount) * districtHeight + 2.0), 0)
+    node.simdPosition = simd_float3(-gridHalf, Float(placedCount) * districtHeight + 2.0, 0)
     rootNode.addChildNode(node)
     pendingNode = node
   }
@@ -129,31 +129,31 @@ final class TowerScene: SCNScene {
   /// Slides the pending district. Call once per frame from the SCNView delegate.
   func updateSlide() {
     guard let pending = pendingNode else { return }
-    var x = Float(pending.position.x) + slideVelocity * slideDirection
+    var x = pending.simdPosition.x + slideVelocity * slideDirection
     if x > gridHalf { x = gridHalf; slideDirection = -1 }
     if x < -gridHalf { x = -gridHalf; slideDirection = 1 }
-    pending.position.x = CGFloat(x)
+    pending.simdPosition = simd_float3(x, pending.simdPosition.y, pending.simdPosition.z)
   }
 
   /// The current grid X of the pending district (snapped by GameCore rules).
   var pendingGridX: Int? {
     guard pendingNode != nil else { return nil }
-    return Int(round(Float(pendingNode!.position.x) / cellSize))
+    return Int(round(pendingNode!.simdPosition.x / cellSize))
   }
 
   /// Drops the pending district; physics takes over from here.
   func dropCurrentDistrict() {
     guard let pending = pendingNode, let type = pendingType else { return }
     pending.name = "district"
-    let gridX = Int(round(Float(pending.position.x) / cellSize))
-    pending.position.x = CGFloat(Float(gridX) * cellSize)
+    let gridX = Int(round(pending.simdPosition.x / cellSize))
+    pending.simdPosition = simd_float3(Float(gridX) * cellSize, pending.simdPosition.y, pending.simdPosition.z)
     let body = SCNPhysicsBody(type: .dynamic, shape: SCNPhysicsShape(geometry: pending.geometry!, options: nil))
     body.mass = Float(type.weight)
     body.allowsResting = true
     body.damping = 0.6
     body.angularDamping = 0.8
     pending.physicsBody = body
-    placementHeights[ObjectIdentifier(pending)] = pending.position.y
+    placementHeights[ObjectIdentifier(pending)] = pending.simdPosition.y
     pendingNode = nil
     pendingType = nil
   }
@@ -173,7 +173,7 @@ final class TowerScene: SCNScene {
     updateSlide()
     for node in rootNode.childNodes where node.name == "district" {
       guard let placedY = placementHeights[ObjectIdentifier(node)] else { continue }
-      if node.presentation.position.y < placedY - 2.0, !collapseReported {
+      if node.presentation.simdPosition.y < placedY - 2.0, !collapseReported {
         collapseReported = true
         onCollapse?(.impact)
       }
