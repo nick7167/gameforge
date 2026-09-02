@@ -84,7 +84,15 @@ workflows:
               -out build/gameforge-dist.p12 \
               -pass pass:"$GAMEFORGE_P12_ENC_PASSWORD"
             ls -la build/gameforge-dist.p12
-            CERT_ID=$(app-store-connect certificates list --type DISTRIBUTION --json \
+            # Extract the private key from the p12 and match the ASC cert by
+            # key — with two active Distribution certs, list order alone can
+            # pick the wrong one and the profile ends up bound to a cert whose
+            # key we do not have.
+            openssl pkcs12 -in build/gameforge-dist.p12 \
+              -passin "pass:$P12_PASSWORD" -nocerts -nodes \
+              -out build/dist.key 2>/dev/null
+            CERT_ID=$(app-store-connect certificates list --type DISTRIBUTION \
+              --certificate-key "@file:$CM_BUILD_DIR/build/dist.key" --json \
               | python3 -c "import json,sys; d=json.load(sys.stdin); d=d['data'] if isinstance(d, dict) and 'data' in d else d; print(d[0]['id'])")
           else
             openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out build/dist.key
