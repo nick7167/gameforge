@@ -1,47 +1,80 @@
 import GameCore
 import SwiftUI
 
-/// Owns the app-level navigation between menu and gameplay.
-///
-/// All gameplay state lives in `Session` (GameCore); this view only drives
-/// and renders it.
+enum AppPhase: Equatable {
+    case menu, playing, shop, gameOver
+}
+
+/// Owns app navigation and the long-lived services. All gameplay state
+/// lives in `SkylineGameModel`/`SkylineSession`; this view drives and renders.
 struct RootView: View {
-    @State private var session = Session()
-    @State private var bestScores = InMemoryHighScoreStore()
+    @StateObject private var purchases = PurchaseService()
+    @State private var phase: AppPhase = .menu
+    @State private var gameModel: SkylineGameModel?
+    @State private var summary: SkylineSession.RunSummary?
+    @State private var meta = SkylinePersistence.load() ?? SkylineMeta()
 
     var body: some View {
-        switch session.phase {
+        switch phase {
         case .menu:
             StartScreen(
-                bestScore: session.bestScore,
-                onStart: {
-                    session.start()
-                }
+                level: meta.level,
+                coins: coins,
+                onStart: { startRun() },
+                onShop: { phase = .shop }
             )
-        case .playing, .paused:
-            GameView(session: session) { event in
-                switch event {
-                case .scored(let points):
-                    session.addScore(points)
-                case .ended:
-                    session.finish()
-                    bestScores.record(score: session.score, for: "demo")
+        case .playing:
+            if let model = gameModel {
+                ZStack {
+                    TowerSceneView(scene: model.scene)
+                        .ignoresSafeArea()
+                    VStack {
+                        GameHUD(
+                            lean: model.session.tower.lean,
+                            coins: model.session.economy.coins,
+                            height: model.session.tower.districts.count * 10,
+                            windIncoming: model.windIncoming
+                        )
+                        .padding(.top, 8)
+                        Spacer()
+                    }
+                    if model.pendingRevive != nil {
+                        ReviveOffer(model: model)
+                    }
                 }
-            } onExit: {
-                session.backToMenu()
+                .onTapGesture {
+                    model.dropPendingDistrict()
+                }
             }
-        case .finished:
-            GameOverScreen(
-                score: session.score,
-                bestScore: session.bestScore,
-                onReplay: {
-                    session.start()
-                },
-                onMenu: {
-                    session.backToMenu()
-                }
-            )
+        case .shop:
+            ShopScreen(purchases: purchases) { phase = .menu }
+        case .gameOver:
+            if let summary {
+                GameOverScreen(
+                    summary: summary,
+                    onReplay: { startRun() },
+                    onMenu: { phase = .menu }
+                )
+            }
         }
+    }
+
+    /// Coins persist across runs via the economy of the latest session.
+    private var coins: Int {
+        gameModel?.session.economy.coins ?? 0
+    }
+
+    private func startRun() {
+        let model = SkylineGameModel(meta: meta, startingCoins: coins, ads: NoOpAdService())
+        model.onRunOver = { [weak model] in
+            guard let model else { return }
+            summary = model.endRun()
+            meta = model.session.meta
+            SkylinePersistence.save(meta)
+            phase = .gameOver
+        }
+        gameModel = model
+        phase = .playing
     }
 }
 
