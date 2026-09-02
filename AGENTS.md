@@ -3,8 +3,43 @@
 Last verified: 2026-09-02. Keep this file accurate; it is the contract for
 every future agent working here.
 
-**Read `docs/HANDOFF.md` first if TestFlight builds are failing** — it
-documents the signing situation in detail.
+## CURRENT STATUS — where we are (2026-09-02)
+
+The foundation phase is **complete**. Everything below is proven working:
+
+- **TestFlight delivery works.** Build 19 is on TestFlight (app record
+  "AdrezGame", ASC app ID `6807883902`) and the owner can install it.
+  Shipping is one command: `./scripts/trigger-testflight.sh` (streams status).
+  Export compliance is declared in `project.yml`
+  (`ITSAppUsesNonExemptEncryption=NO`) so builds no longer get stuck in
+  "Missing Compliance".
+- **Signing is solved** via manual signing in `codemagic.yaml`
+  (`gameforge-testflight` workflow): decrypts the committed encrypted cert
+  (`signing/gameforge-dist.p12.enc`), matches it by SHA-1 fingerprint,
+  renews the profile, archives, uploads. Password lives in the Codemagic env
+  var group `gameforge-signing` (`GAMEFORGE_P12_ENC_PASSWORD`).
+- **Local dev works** on this Linux container: `swift test` (GameCore),
+  `swiftlint` both pass. App target builds only in CI/Codemagic (no Xcode
+  here) — see Commands below.
+- **Skills installed**: 56 agent skills in `.github/skills/` (mirrored in
+  `.claude/skills/`) — `axiom-games` (SpriteKit), `mobile-games`, ASO suite,
+  superpowers workflow skills.
+
+### The next phase: actually design and build the game
+
+The genre is still undecided — that is the immediate next step. Suggested
+approach for a new session:
+
+1. Brainstorm the game concept with the owner (genre, core loop, scope).
+   Use the `brainstorming` skill before any creative work, `axiom-games` +
+   `mobile-games` for SpriteKit/mobile specifics.
+2. Write the game design decision down here and in `docs/architecture.md`.
+3. Build gameplay in GameCore (pure logic + tests) first, then wire it into
+   `Sources/Game` SpriteKit scenes, reusing the existing `Session` pattern.
+4. Ship often with `./scripts/trigger-testflight.sh`.
+
+**Read `docs/HANDOFF.md` if TestFlight builds are failing** — it documents
+the whole signing saga in detail, though the pipeline currently works.
 
 ## What this project is
 
