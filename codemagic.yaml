@@ -47,7 +47,7 @@ workflows:
     environment:
       xcode: 26.6
       groups:
-        - gameforge-signing   # GAMEFORGE_DIST_P12_BASE64 (secure) — see .env/README.md
+        - gameforge-signing   # GAMEFORGE_P12_ENC_PASSWORD (secure) — see .env/gameforge-signing.env
       vars:
         P12_PASSWORD: gameforge-p12
         BUNDLE_ID_RESOURCE_ID: K4G2H6JYJJ
@@ -77,9 +77,12 @@ workflows:
           # 1. Reuse persisted certificate if we have one (Apple caps
           #    Apple Distribution certs at 3). First run creates one and the
           #    p12 is persisted via a Codemagic env var group afterwards.
-          if [ -n "${GAMEFORGE_DIST_P12_BASE64:-}" ]; then
-            # Portable base64 decode (macOS BSD base64 uses -D, not -d)
-            python3 -c "import base64,sys,os; data=base64.b64decode(os.environ['GAMEFORGE_DIST_P12_BASE64']); sys.stdout.buffer.write(data)" > build/gameforge-dist.p12
+          if [ -n "${GAMEFORGE_P12_ENC_PASSWORD:-}" ]; then
+            # Reuse persisted certificate: decrypt the p12 committed to the repo.
+            openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 \
+              -in signing/gameforge-dist.p12.enc \
+              -out build/gameforge-dist.p12 \
+              -pass pass:"$GAMEFORGE_P12_ENC_PASSWORD"
             ls -la build/gameforge-dist.p12
             CERT_ID=$(app-store-connect certificates list --type DISTRIBUTION --json \
               | python3 -c "import json,sys; d=json.load(sys.stdin); d=d['data'] if isinstance(d, dict) and 'data' in d else d; print(d[0]['id'])")
