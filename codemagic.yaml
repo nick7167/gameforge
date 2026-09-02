@@ -108,9 +108,9 @@ workflows:
             echo "Deleting stale profile $OLD_PROFILE_ID"
             app-store-connect profiles delete "$OLD_PROFILE_ID" --ignore-not-found || true
           fi
-          app-store-connect profiles create \
+          app-store-connect profiles create "$BUNDLE_ID_RESOURCE_ID" \
+            --certificate-ids "$CERT_ID" \
             --type IOS_APP_STORE \
-            --certificate-ids "$CERT_ID" "$BUNDLE_ID_RESOURCE_ID" \
             --name "$PROFILE_NAME" --save
 
       - name: Archive with manual signing
