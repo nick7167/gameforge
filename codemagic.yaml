@@ -83,11 +83,11 @@ workflows:
             openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out build/dist.key
             CREATE_OUT=$(app-store-connect certificates create \
               --type DISTRIBUTION \
-              --certificate-key "$CM_BUILD_DIR/build/dist.key" \
+              --certificate-key "$(cat build/dist.key)" \
               --p12-path "$CM_BUILD_DIR/build/gameforge-dist.p12" \
               --p12-password "$P12_PASSWORD" \
               --json)
-            CERT_ID=$(echo "$CREATE_OUT" | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['id'])")
+            CERT_ID=$(echo "$CREATE_OUT" | python3 -c "import json,sys; d=json.load(sys.stdin); d=d['data'] if isinstance(d, dict) and 'data' in d else d; print(d['id'])")
             echo "CERT_ID=$CERT_ID"
             echo "IMPORTANT: after this build succeeds, base64-encode build/gameforge-dist.p12"
             echo "and store it as GAMEFORGE_DIST_P12_BASE64 in a Codemagic env var group."
