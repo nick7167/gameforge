@@ -73,10 +73,11 @@ struct RootView: View {
     }
 
     private func startRun() {
-        let model = SkylineGameModel(meta: meta, startingCoins: coins, ads: NoOpAdService())
+        let model = SkylineGameModel(meta: meta, startingCoins: coins, ads: AdMobService())
         model.onRunOver = { [weak model] in
             guard let model else { return }
-            summary = model.endRun()
+            let gameCenter = GameCenterService()
+            summary = model.endRun(gameCenter: gameCenter)
             meta = model.session.meta
             SkylinePersistence.save(meta)
             phase = .gameOver

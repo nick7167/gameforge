@@ -128,9 +128,12 @@ final class SkylineGameModel: ObservableObject {
 
   // MARK: Run end
 
-  func endRun() -> SkylineSession.RunSummary {
+  func endRun(gameCenter: GameCenterService? = nil) -> SkylineSession.RunSummary {
     let summary = session.endRun()
     lastSummary = summary
+    if let gameCenter {
+      Task { await gameCenter.submitDailyHeight(summary.height) }
+    }
     return summary
   }
 }
