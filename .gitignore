@@ -10,9 +10,9 @@ DerivedData/
 .build/
 .swiftpm/
 
-# Secrets — never commit
-.env
-.env.*
+# Secrets — never commit (contents of .env/, except its README)
+.env/*
+!.env/README.md
 *.p8
 
 # Node

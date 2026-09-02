@@ -102,7 +102,7 @@ Codemagic application ID: `6a983f614174f1fe53ef6630` (repo
 `nick7167/gameforge`). Raw trigger:
 
 ```bash
-set -a; source ~/chameleon-ios/.env.local; set +a
+set -a; source .env/codemagic.env; set +a
 curl -s -X POST -H "Content-Type: application/json" -H "x-auth-token: $CODEMAGIC_API_TOKEN" \
   -d '{"appId": "6a983f614174f1fe53ef6630", "workflowId": "gameforge-testflight", "branch": "main"}' \
   https://api.codemagic.io/builds
@@ -119,9 +119,7 @@ one-time manual setup.
 For bundle IDs, app records, TestFlight groups/build status:
 
 ```bash
-set -a; source ~/chameleon-ios/.env.local; set +a
-export ASC_KEY_ID=2VNDM98D75
-export ASC_KEY_PATH="$HOME/Desktop/vigtigt/AuthKey_2VNDM98D75 - APP STORE CONNECT API VILDSVAR.p8"
+set -a; source .env/asc.env; set +a
 python3 scripts/asc-api.py GET "/v1/apps"
 ```
 

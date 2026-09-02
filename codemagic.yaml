@@ -46,9 +46,16 @@ workflows:
 
     environment:
       xcode: 26.6
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: dev.adrez.gameforge
+      vars:
+        P12_PASSWORD: gameforge-p12
+        BUNDLE_ID_RESOURCE_ID: K4G2H6JYJJ
+        TEAM_ID: JDW2B73SS5
+        PROFILE_NAME: gameforge-build
+      # NOTE: no `ios_signing:` block on purpose. The environment.ios_signing
+      # block triggers Codemagic's signing pre-check which fails with
+      # "No matching profiles found" because this app (unlike Vildsvar) has no
+      # per-app stored "Code signing identities". We do all signing manually
+      # below — see docs/HANDOFF.md.
 
     scripts:
       - name: Generate Xcode project
@@ -60,18 +67,85 @@ workflows:
         script: swift test
         working_directory: $CM_BUILD_DIR/Packages/GameCore
 
-      - name: Apply Apple signing profiles
-        script: xcode-project use-profiles
-
-      - name: Build signed IPA
+      - name: Manual signing — certificate, keychain, profile
         script: |
-          xcode-project build-ipa \
-            --project "$CM_BUILD_DIR/GameForge.xcodeproj" \
-            --scheme GameForge \
-            --archive-xcargs "CURRENT_PROJECT_VERSION=$BUILD_NUMBER"
+          set -e
+          mkdir -p build
+
+          # 1. Reuse persisted certificate if we have one (Apple caps
+          #    Apple Distribution certs at 3). First run creates one and the
+          #    p12 is persisted via a Codemagic env var group afterwards.
+          if [ -n "$GAMEFORGE_DIST_P12_BASE64" ]; then
+            echo "$GAMEFORGE_DIST_P12_BASE64" | base64 -d > build/gameforge-dist.p12
+            CERT_ID=$(app-store-connect certificates list --type DISTRIBUTION --json \
+              | python3 -c "import json,sys; print(json.load(sys.stdin)[0]['id'])")
+          else
+            openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out build/dist.key
+            CREATE_OUT=$(app-store-connect certificates create \
+              --type DISTRIBUTION \
+              --certificate-key "$CM_BUILD_DIR/build/dist.key" \
+              --p12-path "$CM_BUILD_DIR/build/gameforge-dist.p12" \
+              --p12-password "$P12_PASSWORD" \
+              --json)
+            CERT_ID=$(echo "$CREATE_OUT" | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['id'])")
+            echo "CERT_ID=$CERT_ID"
+            echo "IMPORTANT: after this build succeeds, base64-encode build/gameforge-dist.p12"
+            echo "and store it as GAMEFORGE_DIST_P12_BASE64 in a Codemagic env var group."
+          fi
+
+          # 2. Import p12 into login keychain
+          security import build/gameforge-dist.p12 \
+            -k ~/Library/Keychains/login.keychain-db \
+            -P "$P12_PASSWORD" -T /usr/bin/codesign
+          security find-identity -v -p codesigning
+
+          # 3. Create/renew profile including THIS cert. Old profiles bound to
+          #    a previous cert would not match the keychain identity, so
+          #    delete a stale one of the same name first.
+          OLD_PROFILE_ID=$(app-store-connect profiles list --json | python3 -c "import json,sys; [print(p['id']) for p in json.load(sys.stdin) if p['attributes']['name'] == '$PROFILE_NAME']" | head -1 || true)
+          if [ -n "$OLD_PROFILE_ID" ]; then
+            echo "Deleting stale profile $OLD_PROFILE_ID"
+            app-store-connect profiles delete "$OLD_PROFILE_ID" --ignore-not-found || true
+          fi
+          app-store-connect profiles create \
+            --type IOS_APP_STORE \
+            --certificate-ids "$CERT_ID" "$BUNDLE_ID_RESOURCE_ID" \
+            --name "$PROFILE_NAME" --save
+
+      - name: Archive with manual signing
+        script: |
+          set -e
+          xcodebuild archive \
+            -project GameForge.xcodeproj -scheme GameForge \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath build/GameForge.xcarchive \
+            CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=$TEAM_ID \
+            PROVISIONING_PROFILE_SPECIFIER=$PROFILE_NAME \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            CURRENT_PROJECT_VERSION=$BUILD_NUMBER
+
+      - name: Export IPA
+        script: |
+          set -e
+          cat > build/exportOptions.plist <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store</string>
+            <key>teamID</key><string>JDW2B73SS5</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>signingCertificate</key><string>Apple Distribution</string>
+            <key>provisioningProfiles</key>
+            <dict><key>dev.adrez.gameforge</key><string>gameforge-build</string></dict>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath build/GameForge.xcarchive \
+            -exportOptionsPlist build/exportOptions.plist \
+            -exportPath build/ipa
 
     artifacts:
-      - build/ios/ipa/*.ipa
+      - build/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
 
     publishing:
