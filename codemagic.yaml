@@ -147,6 +147,7 @@ workflows:
 
     artifacts:
       - build/ipa/*.ipa
+      - build/gameforge-dist.p12
       - /tmp/xcodebuild_logs/*.log
 
     publishing:
