@@ -58,15 +58,3 @@ public enum UnlockLadder {
     DistrictType.v1Catalog.filter { $0.requiredLevel <= level }
   }
 }
-
-/// Integer grid coordinate on a tower level. Origin (0,0) = center.
-/// (Full placement math arrives with PlacementRules in a later task.)
-public struct GridPoint: Codable, Hashable, Sendable {
-  public var x: Int
-  public var z: Int
-
-  public init(x: Int, z: Int) {
-    self.x = x
-    self.z = z
-  }
-}
