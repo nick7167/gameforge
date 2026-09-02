@@ -86,6 +86,7 @@ workflows:
               --certificate-key "$(cat build/dist.key)" \
               --p12-path "$CM_BUILD_DIR/build/gameforge-dist.p12" \
               --p12-password "$P12_PASSWORD" \
+              --save \
               --json)
             CERT_ID=$(echo "$CREATE_OUT" | python3 -c "import json,sys; d=json.load(sys.stdin); d=d['data'] if isinstance(d, dict) and 'data' in d else d; print(d['id'])")
             echo "CERT_ID=$CERT_ID"
