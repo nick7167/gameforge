@@ -16,15 +16,10 @@ workflows:
           mkdir -p build
           export HOMEBREW_NO_AUTO_UPDATE=1
           {
-            echo "=== generate project ==="
-            brew install xcodegen
-            xcodegen generate
-            echo "=== use-profiles with project ==="
-            xcode-project use-profiles --project=GameForge.xcodeproj || true
-            echo "=== keychain identities after use-profiles ==="
-            security find-identity -v -p codesigning || true
-            echo "=== downloaded profiles ==="
-            ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/" || true
+            echo "=== certificates help ==="
+            app-store-connect certificates create --help || true
+            echo "=== profiles help ==="
+            app-store-connect profiles create --help || true
           } 2>&1 | tee build/debug-signing.log
 
     artifacts:
