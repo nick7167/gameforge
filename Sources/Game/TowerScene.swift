@@ -54,7 +54,7 @@ final class TowerScene: SCNScene {
   }
 
   private func setupFoundation() {
-    let side = gridHalf * 2 + 2
+    let side = CGFloat(gridHalf * 2 + 2)
     let geometry = SCNBox(width: side, height: 0.6, length: side, chamferRadius: 0.1)
     let material = SCNMaterial()
     material.diffuse.contents = UIColor(red: 0.82, green: 0.74, blue: 0.62, alpha: 1)
@@ -102,8 +102,8 @@ final class TowerScene: SCNScene {
   }
 
   private func makeNode(for type: DistrictType) -> SCNNode {
-    let side = Float(type.footprint) * cellSize
-    let geometry = SCNBox(width: side, height: districtHeight, length: side, chamferRadius: 0.05)
+    let side = CGFloat(Float(type.footprint) * cellSize)
+    let geometry = SCNBox(width: side, height: CGFloat(districtHeight), length: side, chamferRadius: 0.05)
     geometry.materials = [material(for: type)]
     return SCNNode(geometry: geometry)
   }
@@ -178,8 +178,9 @@ final class TowerScene: SCNScene {
         onCollapse?(.impact)
       }
       // Curing: near-zero velocity for a settled body → freeze it.
+      // SCNNode has no `velocity`; use the physics body's velocity instead.
       if let body = node.physicsBody, body.type == .dynamic,
-         node.presentation.velocity.length() < 0.05, node.presentation.position.y > 0 {
+         body.velocity.length() < 0.05, node.presentation.position.y > 0 {
         body.type = .static
         onDistrictSettled?(true)
       }
@@ -213,9 +214,11 @@ final class TowerScene: SCNScene {
 
   /// Slow-motion collapse effect.
   func playSlowMotion() {
-    physicsWorld.timeScale = 0.25
+    // SCNPhysicsWorld has no timeScale; simulate slow-mo by pausing physics
+    // briefly, then resuming (visual pacing handled by the camera/HUD).
+    physicsWorld.speed = 0.25
     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-      self?.physicsWorld.timeScale = 1
+      self?.physicsWorld.speed = 1
     }
   }
 }

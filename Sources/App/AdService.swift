@@ -49,10 +49,13 @@ final class AdMobService: NSObject, RewardedAdService, @unchecked Sendable {
     }
   }
 
+  @MainActor
   func show(from viewController: UIViewController?) async -> Bool {
     guard let rewarded else { return false }
     // present(from:) returns Void; the reward handler fires when earned.
-    let earned = await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+    // MainActor isolation keeps the non-Sendable RewardedAd and its callback
+    // off concurrent executors (Swift 6 strict concurrency).
+    return await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
       var resumed = false
       rewarded.present(from: viewController) {
         guard !resumed else { return }
@@ -63,6 +66,5 @@ final class AdMobService: NSObject, RewardedAdService, @unchecked Sendable {
       // flow treats a missing callback as decline (correct per spec).
       _ = resumed
     }
-    return earned
   }
 }
