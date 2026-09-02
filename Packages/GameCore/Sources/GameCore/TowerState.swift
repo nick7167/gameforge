@@ -66,8 +66,8 @@ public struct TowerState: Sendable {
   /// Cured districts stop contributing to lean (their weight is settled).
   public mutating func cure(tick: UInt64) {
     guard let newest = districts.map(\.placedAtTick).max() else { return }
-    for d in districts where newest - d.placedAtTick >= UInt64(curePlacements) {
-      curedDistrictIDs.insert(d.placedAtTick)
+    for district in districts where newest - district.placedAtTick >= UInt64(curePlacements) {
+      curedDistrictIDs.insert(district.placedAtTick)
     }
   }
 
@@ -76,10 +76,11 @@ public struct TowerState: Sendable {
     guard !districts.isEmpty else { return 1.0 }
     let uncured = districts.filter { !curedDistrictIDs.contains($0.placedAtTick) }
     guard !uncured.isEmpty else { return 1.0 }
-    let uncuredLean = uncured.reduce(0.0) { sum, d in
-      let w = Double(weight(of: d.typeID))
-      let err = rules.alignmentError(offset: d.gridOrigin - (districts.first?.gridOrigin ?? GridPoint(x: 0, z: 0)))
-      return sum + err * w * 0.05
+    let base = districts.first?.gridOrigin ?? GridPoint(x: 0, z: 0)
+    let uncuredLean = uncured.reduce(0.0) { sum, district in
+      let districtWeight = Double(weight(of: district.typeID))
+      let error = rules.alignmentError(offset: district.gridOrigin - base)
+      return sum + error * districtWeight * 0.05
     }
     return max(0, 1.0 - min(1.0, uncuredLean))
   }

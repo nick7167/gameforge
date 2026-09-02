@@ -31,7 +31,7 @@ extension DistrictType {
     DistrictType(id: "tower", displayName: "Tower", footprint: 1, weight: 4, rentPerMilestone: 5, requiredLevel: 3),
     DistrictType(id: "temple", displayName: "Temple", footprint: 3, weight: 2, rentPerMilestone: 4, requiredLevel: 4),
     DistrictType(id: "garden", displayName: "Sky Garden", footprint: 2, weight: 1, rentPerMilestone: 3, requiredLevel: 5),
-    DistrictType(id: "observatory", displayName: "Observatory", footprint: 1, weight: 3, rentPerMilestone: 6, requiredLevel: 6),
+    DistrictType(id: "observatory", displayName: "Observatory", footprint: 1, weight: 3, rentPerMilestone: 6, requiredLevel: 6)
   ]
 }
 

@@ -9,11 +9,11 @@ public struct DailyChallenge: Sendable {
   public let parPlacements: Int
 
   public init(date: Date, calendar: Calendar = .current) {
-    let c = calendar.dateComponents([.year, .month, .day], from: date)
+    let components = calendar.dateComponents([.year, .month, .day], from: date)
     var hasher = Hasher()
-    hasher.combine(c.year)
-    hasher.combine(c.month)
-    hasher.combine(c.day)
+    hasher.combine(components.year)
+    hasher.combine(components.month)
+    hasher.combine(components.day)
     seed = UInt64(bitPattern: Int64(hasher.finalize()))
 
     var rng = SeededGenerator(seed: seed)

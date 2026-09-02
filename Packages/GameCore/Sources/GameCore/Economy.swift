@@ -1,5 +1,18 @@
 import Foundation
 
+/// One entry per IAP tier: product id, Coins granted, USD price.
+public struct CoinTier: Sendable {
+  public let id: String
+  public let coins: Int
+  public let priceUSD: Double
+
+  public init(id: String, coins: Int, priceUSD: Double) {
+    self.id = id
+    self.coins = coins
+    self.priceUSD = priceUSD
+  }
+}
+
 /// Coins, rent, combo bonuses and helper inventory.
 public struct Economy: Sendable {
   public enum Helper: String, Codable, CaseIterable, Sendable {
@@ -7,10 +20,10 @@ public struct Economy: Sendable {
   }
 
   public struct CoinPack: Sendable {
-    public static let iapTiers: [(id: String, coins: Int, priceUSD: Double)] = [
-      ("coins.small", 100, 0.99),
-      ("coins.medium", 350, 2.99),
-      ("coins.large", 700, 4.99),
+    public static let iapTiers: [CoinTier] = [
+      CoinTier(id: "coins.small", coins: 100, priceUSD: 0.99),
+      CoinTier(id: "coins.medium", coins: 350, priceUSD: 2.99),
+      CoinTier(id: "coins.large", coins: 700, priceUSD: 4.99)
     ]
   }
 

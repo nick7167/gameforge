@@ -21,16 +21,16 @@ import Testing
     var wind = WindSystem(seed: 42)
     var tick: UInt64 = 0
     for _ in 0..<50 {
-      let g = wind.gust(afterTick: tick)
-      #expect(g.durationTicks >= 3 && g.durationTicks <= 8)
-      #expect(g.strength >= 0.2 && g.strength <= 1.0)
-      tick = g.startTick + g.durationTicks
+      let gust = wind.gust(afterTick: tick)
+      #expect(gust.durationTicks >= 3 && gust.durationTicks <= 8)
+      #expect(gust.strength >= 0.2 && gust.strength <= 1.0)
+      tick = gust.startTick + gust.durationTicks
     }
   }
 
   @Test func gustStartsAfterLeadTime() {
     var wind = WindSystem(seed: 7)
-    let g = wind.gust(afterTick: 100)
-    #expect(g.startTick > 100)
+    let gust = wind.gust(afterTick: 100)
+    #expect(gust.startTick > 100)
   }
 }

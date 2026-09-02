@@ -8,9 +8,9 @@ import Testing
   }
 
   @Test func footprintsAreWithinBounds() {
-    for t in DistrictType.v1Catalog {
-      #expect((1...3).contains(t.footprint), "\(t.id) footprint out of range")
-      #expect((1...5).contains(t.weight))
+    for districtType in DistrictType.v1Catalog {
+      #expect((1...3).contains(districtType.footprint), "\(districtType.id) footprint out of range")
+      #expect((1...5).contains(districtType.weight))
     }
   }
 

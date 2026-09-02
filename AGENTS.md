@@ -25,18 +25,19 @@ The foundation phase is **complete**. Everything below is proven working:
   `.claude/skills/`) — `axiom-games` (SpriteKit), `mobile-games`, ASO suite,
   superpowers workflow skills.
 
-### The next phase: actually design and build the game
+### The next phase: build Skyline Stack
 
-The genre is still undecided — that is the immediate next step. Suggested
-approach for a new session:
+The game is decided: **Skyline Stack** — a 3D physics tower-builder with
+Monument Minimalism art direction. Full design spec:
+`docs/superpowers/specs/2026-09-02-skyline-stack-design.md`.
 
-1. Brainstorm the game concept with the owner (genre, core loop, scope).
-   Use the `brainstorming` skill before any creative work, `axiom-games` +
-   `mobile-games` for SpriteKit/mobile specifics.
-2. Write the game design decision down here and in `docs/architecture.md`.
-3. Build gameplay in GameCore (pure logic + tests) first, then wire it into
-   `Sources/Game` SpriteKit scenes, reusing the existing `Session` pattern.
-4. Ship often with `./scripts/trigger-testflight.sh`.
+- **GameCore logic implemented (2026-09-02)**: district types, placement
+  grid + sweet-zone, tower lean/stability/curing, deterministic wind,
+  collapse/revive state machine, economy (Coins, helpers, IAP tiers),
+  skyline meta (XP/unlocks/milestones), date-seeded daily challenge, and
+  the `SkylineSession` facade. 55 tests green, lint clean.
+- **Next steps**: app-layer plan (SceneKit physics/rendering, SwiftUI,
+  RevenueCat IAP, AdMob rewarded ads, Game Center), then ship to TestFlight.
 
 **Read `docs/HANDOFF.md` if TestFlight builds are failing** — it documents
 the whole signing saga in detail, though the pipeline currently works.

@@ -43,10 +43,10 @@ public struct SkylineMeta: Codable, Sendable {
   /// this returns the flat amount so it stays deterministic per calendar day.
   public static func dailyBonusCoins(date: Date, calendar: Calendar = .current) -> Int {
     var hasher = Hasher()
-    let c = calendar.dateComponents([.year, .month, .day], from: date)
-    hasher.combine(c.year)
-    hasher.combine(c.month)
-    hasher.combine(c.day)
+    let components = calendar.dateComponents([.year, .month, .day], from: date)
+    hasher.combine(components.year)
+    hasher.combine(components.month)
+    hasher.combine(components.day)
     _ = hasher.finalize()
     return 20
   }

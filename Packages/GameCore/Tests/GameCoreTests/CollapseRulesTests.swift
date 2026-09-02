@@ -4,8 +4,8 @@ import Testing
 @Suite struct CollapseRulesTests {
   func makeTower(height: Int) -> TowerState {
     var tower = TowerState()
-    for i in 0..<height {
-      tower.place(DistrictType.v1Catalog[i % DistrictType.v1Catalog.count], at: GridPoint(x: 0, z: 0), tick: UInt64(i))
+    for tick in 0..<height {
+      tower.place(DistrictType.v1Catalog[tick % DistrictType.v1Catalog.count], at: GridPoint(x: 0, z: 0), tick: UInt64(tick))
     }
     return tower
   }

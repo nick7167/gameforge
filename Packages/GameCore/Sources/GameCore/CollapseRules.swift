@@ -8,12 +8,6 @@ public struct CollapseOutcome: Equatable, Sendable {
   public let removedDistrict: District?
   public let towerEmptyAfter: Bool
   public let consecutiveCollapses: Int
-
-  init(removedDistrict: District?, towerEmptyAfter: Bool, consecutiveCollapses: Int) {
-    self.removedDistrict = removedDistrict
-    self.towerEmptyAfter = towerEmptyAfter
-    self.consecutiveCollapses = consecutiveCollapses
-  }
 }
 
 /// Collapse resolution: cascade cap (one district per event), revive offer

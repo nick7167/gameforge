@@ -18,8 +18,8 @@ import Testing
 
   @Test func collapseThenReviveKeepsRunAlive() {
     var session = SkylineSession()
-    for i in 0..<3 {
-      _ = session.placeDistrict(typeID: "homes", at: GridPoint(x: 0, z: 0), tick: UInt64(i))
+    for tick in 0..<3 {
+      _ = session.placeDistrict(typeID: "homes", at: GridPoint(x: 0, z: 0), tick: UInt64(tick))
     }
     let outcome = session.handleCollapse(cause: .leanOverflow, tick: 10)
     #expect(outcome.removedDistrict != nil)
@@ -29,8 +29,8 @@ import Testing
 
   @Test func threeCollapsesEndRun() {
     var session = SkylineSession()
-    for i in 0..<6 {
-      _ = session.placeDistrict(typeID: "homes", at: GridPoint(x: 0, z: 0), tick: UInt64(i))
+    for tick in 0..<6 {
+      _ = session.placeDistrict(typeID: "homes", at: GridPoint(x: 0, z: 0), tick: UInt64(tick))
     }
     _ = session.handleCollapse(cause: .leanOverflow, tick: 10)
     _ = session.handleCollapse(cause: .leanOverflow, tick: 11)

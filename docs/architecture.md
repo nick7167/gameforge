@@ -32,6 +32,28 @@ GameCore knows nothing about any layer above it.
 The scene never owns gameplay rules — it only reports events. This makes
 every rule unit-testable in GameCore without a simulator.
 
+## GameCore components (Skyline Stack)
+
+Implemented 2026-09-02 — see
+`docs/superpowers/specs/2026-09-02-skyline-stack-design.md` and the plan in
+`docs/superpowers/plans/2026-09-02-skyline-stack-gamecore.md`.
+
+| File | Responsibility |
+|---|---|
+| `District.swift` | `DistrictType` (8-type v1 catalog), `District` instance, `UnlockLadder` (XP → level → unlocks) |
+| `Placement.swift` | `GridPoint`, `PlacementRules` — snap, sweet-zone perfect detection, overlap/overhang legality |
+| `TowerState.swift` | Ordered districts, lean accumulation, stability score, district curing, `removeTop` |
+| `WindSystem.swift` | Deterministic seeded gusts (start/duration/strength/direction) |
+| `CollapseRules.swift` | Cascade cap (1 district per event), revive offer/confirm/decline, foundation loss |
+| `Economy.swift` | Coins, rent with perfect-streak bonus, helper inventory + prices, `CoinPack` IAP tiers |
+| `SkylineMeta.swift` | Persistent skyline, XP/level, unlocked types, height milestones, daily bonus |
+| `DailyChallenge.swift` | Date-seeded challenge (offline, same on every device) |
+| `SkylineSession.swift` | Facade: placement → rent/XP, collapse → revive flow, `endRun()` summary |
+
+`SkylineSession` is the single entry point the app layer drives. The
+SceneKit layer runs real rigid-body physics and reports outcomes (collapse,
+lean) into these rules; GameCore owns every rule and score.
+
 ## Extension points when the genre is chosen
 
 - **Game rules / progression / economy** → new types in `Packages/GameCore`,

@@ -33,8 +33,8 @@ public struct PlacementRules: Sendable {
     self.gridExtent = gridExtent
   }
 
-  public func snap(_ p: GridPoint) -> GridPoint {
-    GridPoint(x: min(max(p.x, -half), half), z: min(max(p.z, -half), half))
+  public func snap(_ point: GridPoint) -> GridPoint {
+    GridPoint(x: min(max(point.x, -half), half), z: min(max(point.z, -half), half))
   }
 
   public func alignmentError(offset: GridPoint) -> Double {
