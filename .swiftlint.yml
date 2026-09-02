@@ -11,4 +11,12 @@ identifier_name:
   excluded:
     - x
     - y
+    - z
+    - a
+    - b
     - id
+
+# SwiftPM build artifacts (generated, not in git) — exclude everywhere.
+excluded:
+  - .build
+  - Packages/GameCore/.build

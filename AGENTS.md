@@ -27,20 +27,26 @@ If a rule can be expressed without a screen, it belongs in GameCore.
 
 ## Commands
 
-Local machine (Intel, 8 GB RAM, **no full Xcode** — CLT only):
+Local machine (Linux dev container, Ubuntu 24.04, 4 cores / 15 GB RAM):
 
 | Task | Command | Notes |
 |---|---|---|
-| Generate Xcode project | `xcodegen generate` | Run after editing `project.yml` |
-| Test GameCore locally | `swift test` (in `Packages/GameCore`) | Broken until CLT repaired — see below |
-| Typecheck Swift locally | `xcrun swiftc -typecheck -swift-version 6 <files>` | Limited by CLT bugs below |
+| Test GameCore locally | `swift test` (in `Packages/GameCore`) | Works — Swift 6.3.3 at `/opt/swift/usr/bin` |
+| Lint locally | `swiftlint --config .swiftlint.yml` | SwiftLint 0.65.1 at `/usr/local/bin/swiftlint` |
+| Typecheck Swift locally | `xcrun swiftc -typecheck -swift-version 6 <files>` | Not available — `xcrun` is macOS-only |
 
-**Known local limitation:** this Mac's Command Line Tools installation is
-corrupted (duplicate SwiftBridging modulemap + broken
-libPackageDescription.dylib). `swift test` and Foundation imports fail
-locally. Run `./scripts/fix-local-clt.sh` (requires sudo, ask the user)
-to repair. Until then, **all Swift compile/test verification happens in CI
-and Codemagic** — push to a branch and watch the run.
+Swift toolchain setup on this container: toolchain extracted to
+`/opt/swift` (add `/opt/swift/usr/bin` to PATH — done via `~/.bashrc.d/swift.sh`).
+System deps for Swift on Ubuntu 24.04 were installed with apt (binutils,
+libcurl4-openssl-dev, libedit2, libgcc-13-dev, libpython3-dev, libsqlite3-0,
+libstdc++-13-dev, libxml2-dev, libncurses-dev, libz3-dev, tzdata, zlib1g-dev).
+SwiftLint is the official `swiftlint_linux_amd64.zip` from realm/SwiftLint releases.
+
+**Local limitation:** no Xcode/xcodebuild/xcodegen here. The app target
+(SwiftUI/SpriteKit) cannot be compiled or smoke-tested locally — that
+verification happens in CI and Codemagic only. There is also no `swift test`
+need for `./scripts/fix-local-clt.sh` anymore (that script was for the old
+Mac's broken Command Line Tools and kept for reference).
 
 Remote (this is the real verification loop):
 
