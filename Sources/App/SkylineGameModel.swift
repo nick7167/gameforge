@@ -1,0 +1,136 @@
+import Foundation
+import GameCore
+import SwiftUI
+
+/// Drives one run: owns the SkylineSession and the TowerScene, bridges
+/// SceneKit outcomes into GameCore rules, exposes state for the HUD.
+@MainActor
+final class SkylineGameModel: ObservableObject {
+  @Published private(set) var session: SkylineSession
+  @Published private(set) var pendingRevive: CollapseOutcome?
+  @Published private(set) var runOver = false
+  @Published private(set) var lastSummary: SkylineSession.RunSummary?
+  @Published private(set) var windIncoming = false
+
+  /// The scene is owned here; RootView embeds it via TowerSceneView.
+  let scene: TowerScene
+  private let ads: RewardedAdService
+  private let wind: WindSystem
+  private var nextGustTick: UInt64 = 0
+  private var currentGust: WindSystem.Gust?
+  private var tick: UInt64 = 0
+  private var settleTimer: Timer?
+
+  var onRunOver: (() -> Void)?
+
+  init(meta: SkylineMeta, startingCoins: Int, ads: RewardedAdService, windSeed: UInt64 = 42) {
+    self.ads = ads
+    self.scene = TowerScene()
+    self.wind = WindSystem(seed: windSeed)
+    session = SkylineSession(meta: meta, startingCoins: startingCoins)
+    wireSceneCallbacks()
+    scheduleNextGust()
+    spawnNextDistrict()
+  }
+
+  private func wireSceneCallbacks() {
+    scene.onCollapse = { [weak self] cause in
+      self?.handleCollapse(cause)
+    }
+  }
+
+  // MARK: Placement
+
+  var currentTypeID: String {
+    session.meta.unlockedTypeIDs.sorted().first ?? "homes"
+  }
+
+  private func spawnNextDistrict() {
+    let typeID = currentTypeID
+    guard let type = DistrictType.v1Catalog.first(where: { $0.id == typeID }) else { return }
+    scene.spawnDistrict(type)
+  }
+
+  /// Drops the hovering district and applies GameCore rules.
+  func dropPendingDistrict() {
+    guard let gridX = scene.pendingGridX else { return }
+    let result = session.placeDistrict(typeID: currentTypeID, at: GridPoint(x: gridX, z: 0), tick: tick)
+    if case .placed = result {
+      scene.dropCurrentDistrict()
+      tick += 1
+    } else {
+      // Illegal placement: the district stays hovering; nudge the slide.
+      scene.removePending()
+      spawnNextDistrict()
+    }
+  }
+
+  // MARK: Collapse & revive
+
+  func handleCollapse(_ cause: CollapseCause) {
+    scene.playSlowMotion()
+    let outcome = session.handleCollapse(cause: cause, tick: tick)
+    scene.removeTopDistrict()
+    if session.isRunOver {
+      runOver = true
+      onRunOver?()
+    } else {
+      pendingRevive = outcome
+    }
+  }
+
+  func reviveByAd() async {
+    let earned = await ads.show(from: nil)
+    if earned {
+      session.confirmAdRevive()
+      scene.stabilize(seconds: 8)
+    } else {
+      session.abandonRevive()
+    }
+    pendingRevive = nil
+  }
+
+  func reviveByHelper() -> Bool {
+    let ok = session.revive()
+    if ok {
+      scene.stabilize(seconds: 8)
+      pendingRevive = nil
+    }
+    return ok
+  }
+
+  func abandonRevive() {
+    session.abandonRevive()
+    pendingRevive = nil
+  }
+
+  // MARK: Wind
+
+  private func scheduleNextGust() {
+    let gust = wind.gust(afterTick: tick)
+    nextGustTick = gust.startTick
+    currentGust = gust
+  }
+
+  /// Advances the world one step; called from the render loop.
+  func advanceTick() {
+    tick += 1
+    scene.tick()
+    if let gust = currentGust, tick == gust.startTick {
+      scene.applyGust(strength: gust.strength, direction: gust.direction)
+      windIncoming = false
+    } else if tick >= nextGustTick - 5, tick < nextGustTick {
+      windIncoming = true
+    } else if let gust = currentGust, tick > gust.startTick + gust.durationTicks {
+      scheduleNextGust()
+    }
+  }
+
+  // MARK: Run end
+
+  func endRun() -> SkylineSession.RunSummary {
+    let summary = session.endRun()
+    lastSummary = summary
+    return summary
+  }
+}
