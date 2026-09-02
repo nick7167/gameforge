@@ -36,8 +36,12 @@ Monument Minimalism art direction. Full design spec:
   collapse/revive state machine, economy (Coins, helpers, IAP tiers),
   skyline meta (XP/unlocks/milestones), date-seeded daily challenge, and
   the `SkylineSession` facade. 55 tests green, lint clean.
-- **Next steps**: app-layer plan (SceneKit physics/rendering, SwiftUI,
-  RevenueCat IAP, AdMob rewarded ads, Game Center), then ship to TestFlight.
+- **App layer implemented (2026-09-02)**: SceneKit tower with rigid-body
+  physics (`TowerScene`), `SkylineGameModel` + HUD, revive offer, shop,
+  game over/share, persistence, RevenueCat IAP, AdMob rewarded ads,
+  Game Center daily leaderboard. CI green (lint + tests + app build).
+- **Next steps**: TestFlight build of the playable game, device polish
+  (physics feel, camera), store listing.
 
 **Read `docs/HANDOFF.md` if TestFlight builds are failing** — it documents
 the whole signing saga in detail, though the pipeline currently works.

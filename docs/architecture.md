@@ -54,6 +54,29 @@ Implemented 2026-09-02 — see
 SceneKit layer runs real rigid-body physics and reports outcomes (collapse,
 lean) into these rules; GameCore owns every rule and score.
 
+## App-layer components (Skyline Stack)
+
+Implemented 2026-09-02 — plan:
+`docs/superpowers/plans/2026-09-02-skyline-stack-app-layer.md`.
+
+| File | Responsibility |
+|---|---|
+| `Sources/Game/TowerScene.swift` | SceneKit scene: rigid-body tower, sliding pending district, curing (dynamic→static), collapse detection, wind impulses, slow-mo; reports outcomes via callbacks |
+| `Sources/Game/TowerSceneView.swift` | SwiftUI `UIViewRepresentable` bridge |
+| `Sources/App/SkylineGameModel.swift` | `@MainActor` run model: owns session + scene, bridges physics→rules, wind scheduling, revive flow |
+| `Sources/App/Persistence.swift` | `SkylineMeta` JSON save/load in Application Support |
+| `Sources/App/PurchaseService.swift` | RevenueCat facade: Remove Ads entitlement, Coin packs, restore; no-op when unconfigured |
+| `Sources/App/AdService.swift` | `RewardedAdService` protocol + AdMob implementation + no-op fallback |
+| `Sources/App/GameCenterService.swift` | Daily-height leaderboard submit/view; no-op when signed out |
+| `Sources/UI/GameHUD.swift` | Lean meter, Coins, height, wind warning |
+| `Sources/UI/ReviveOffer.swift` | "Stabilize & Continue" rewarded-ad offer with 10 s auto-decline |
+| `Sources/UI/ShopScreen.swift` | Remove Ads + Coin packs (RevenueCat-driven) |
+| `Sources/UI/StartScreen.swift` / `GameOverScreen.swift` | Monument Minimalism menu and run summary with milestone + share |
+
+Data flow: `RootView` → `SkylineGameModel` → (`TowerScene` physics events →
+GameCore rules → published state → SwiftUI). Services (purchases, ads,
+Game Center) are injected/facaded so the game runs fully without them.
+
 ## Extension points when the genre is chosen
 
 - **Game rules / progression / economy** → new types in `Packages/GameCore`,
