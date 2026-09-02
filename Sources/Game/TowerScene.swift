@@ -146,7 +146,7 @@ final class TowerScene: SCNScene {
     guard let pending = pendingNode, let type = pendingType else { return }
     pending.name = "district"
     let gridX = Int(round(pending.position.x / cellSize))
-    pending.position.x = Float(gridX) * cellSize
+    pending.position.x = CGFloat(Float(gridX) * cellSize)
     let body = SCNPhysicsBody(type: .dynamic, shape: SCNPhysicsShape(geometry: pending.geometry!, options: nil))
     body.mass = Float(type.weight)
     body.allowsResting = true
@@ -178,11 +178,15 @@ final class TowerScene: SCNScene {
         onCollapse?(.impact)
       }
       // Curing: near-zero velocity for a settled body → freeze it.
-      // SCNNode has no `velocity`; use the physics body's velocity instead.
-      if let body = node.physicsBody, body.type == .dynamic,
-         body.velocity.length() < 0.05, node.presentation.position.y > 0 {
-        body.type = .static
-        onDistrictSettled?(true)
+      // SCNPhysicsBody.velocity is an SCNVector3 of Floats; compute the
+      // magnitude manually (no .length() member).
+      if let body = node.physicsBody, body.type == .dynamic {
+        let v = body.velocity
+        let speed = (v.x * v.x + v.y * v.y + v.z * v.z).squareRoot()
+        if speed < 0.05, node.presentation.position.y > 0 {
+          body.type = .static
+          onDistrictSettled?(true)
+        }
       }
     }
   }
