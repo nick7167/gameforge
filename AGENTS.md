@@ -3,6 +3,9 @@
 Last verified: 2026-09-02. Keep this file accurate; it is the contract for
 every future agent working here.
 
+**Read `docs/HANDOFF.md` first if TestFlight builds are failing** — it
+documents the signing situation in detail.
+
 ## What this project is
 
 An iOS game, codename **GameForge**, native Swift from the ground up. The
