@@ -34,6 +34,10 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        # Export compliance: app uses only Apple's standard OS encryption
+        # (HTTPS etc.) — no proprietary crypto. false = exempt, so TestFlight
+        # builds skip the "Missing Compliance" manual step entirely.
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         CURRENT_PROJECT_VERSION: "1"
 
   GameForgeTests:
