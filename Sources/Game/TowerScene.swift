@@ -148,7 +148,7 @@ final class TowerScene: SCNScene {
     let gridX = Int(round(pending.simdPosition.x / cellSize))
     pending.simdPosition = simd_float3(Float(gridX) * cellSize, pending.simdPosition.y, pending.simdPosition.z)
     let body = SCNPhysicsBody(type: .dynamic, shape: SCNPhysicsShape(geometry: pending.geometry!, options: nil))
-    body.mass = Float(type.weight)
+    body.mass = CGFloat(type.weight)
     body.allowsResting = true
     body.damping = 0.6
     body.angularDamping = 0.8
