@@ -1,6 +1,7 @@
 import Foundation
 import UIKit
 import RevenueCat
+import GoogleMobileAds
 
 /// Rewarded-video abstraction. The game must run without ads configured
 /// (simulator, CI, ad-load failures) — hence the no-op implementation.
@@ -39,13 +40,29 @@ final class AdMobService: NSObject, RewardedAdService, @unchecked Sendable {
   private func load() async {
     let unitID = Self.testUnitID
     if loadedUnitID == unitID, rewarded != nil { return }
-    rewarded = try? await RewardedAd.load(with: unitID, request: Request())
-    loadedUnitID = unitID
+    do {
+      rewarded = try await RewardedAd.load(with: unitID, request: Request())
+      loadedUnitID = unitID
+    } catch {
+      rewarded = nil
+      loadedUnitID = nil
+    }
   }
 
   func show(from viewController: UIViewController?) async -> Bool {
     guard let rewarded else { return false }
-    let presented = rewarded.present(from: viewController) { _ in }
-    return presented
+    // present(from:) returns Void; the reward handler fires when earned.
+    let earned = await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+      var resumed = false
+      rewarded.present(from: viewController) {
+        guard !resumed else { return }
+        resumed = true
+        continuation.resume(returning: true)
+      }
+      // If presentation fails, no reward callback ever fires; the revive
+      // flow treats a missing callback as decline (correct per spec).
+      _ = resumed
+    }
+    return earned
   }
 }
