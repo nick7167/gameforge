@@ -24,7 +24,8 @@ final class PurchaseService: ObservableObject {
     self.onCoinsGranted = onCoinsGranted
     guard let apiKey, !apiKey.isEmpty else { return }
     Purchases.logLevel = .warn
-    Purchases.configure(with: apiKey)
+    let configuration = Configuration.Builder(withAPIKey: apiKey).build()
+    Purchases.configure(with: configuration)
     isConfigured = true
   }
 
@@ -44,7 +45,7 @@ final class PurchaseService: ObservableObject {
       if result.userCancelled { return false }
       await refreshEntitlements()
       if let coins = Self.coinPackProductIDs[productID] {
-        onCoinsGranted(coins)
+        onCoinsGranted?(coins)
       }
       if productID == Self.removeAdsProductID {
         removeAdsOwned = true
@@ -63,7 +64,7 @@ final class PurchaseService: ObservableObject {
 
   func grantCoinsIfPurchased(productID: String) -> Int? {
     guard let coins = Self.coinPackProductIDs[productID] else { return nil }
-    onCoinsGranted(coins)
+    onCoinsGranted?(coins)
     return coins
   }
 }

@@ -93,7 +93,9 @@ final class TowerScene: SCNScene {
     pendingNode = node
   }
 
-  private func removePending() {
+  /// Removes the hovering pending district (public so the model can reset
+  /// after an illegal placement).
+  func removePending() {
     pendingNode?.removeFromParentNode()
     pendingNode = nil
     pendingType = nil

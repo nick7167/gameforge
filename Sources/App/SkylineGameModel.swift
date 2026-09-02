@@ -15,7 +15,7 @@ final class SkylineGameModel: ObservableObject {
   /// The scene is owned here; RootView embeds it via TowerSceneView.
   let scene: TowerScene
   private let ads: RewardedAdService
-  private let wind: WindSystem
+  private var wind: WindSystem
   private var nextGustTick: UInt64 = 0
   private var currentGust: WindSystem.Gust?
   private var tick: UInt64 = 0
