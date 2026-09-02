@@ -138,13 +138,23 @@ workflows:
           keychain initialize
           security unlock-keychain -p "" ~/Library/Keychains/login.keychain-db || true
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "" ~/Library/Keychains/login.keychain-db || true
+
+          # Manual signing scoped to the app target only. SPM package targets
+          # (RevenueCat, GoogleMobileAds) do not support provisioning profiles
+          # and must keep automatic signing — passing PROVISIONING_PROFILE_
+          # SPECIFIER globally breaks the archive (exit 65, see build
+          # 6a98ac068aab798f6e672466). The per-target override uses
+          # xcodebuild's target-scoped build setting syntax.
           xcodebuild archive \
             -project GameForge.xcodeproj -scheme GameForge \
             -configuration Release -destination 'generic/platform=iOS' \
             -archivePath build/GameForge.xcarchive \
-            CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=$TEAM_ID \
-            PROVISIONING_PROFILE_SPECIFIER=$PROFILE_NAME \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
+            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGN_IDENTITY="Apple Development" \
+            GameForge_CODE_SIGN_STYLE=Manual \
+            GameForge_PROVISIONING_PROFILE_SPECIFIER=$PROFILE_NAME \
+            GameForge_DEVELOPMENT_TEAM=$TEAM_ID \
+            GameForge_CODE_SIGN_IDENTITY="Apple Distribution" \
             CURRENT_PROJECT_VERSION=$BUILD_NUMBER
 
       - name: Export IPA
