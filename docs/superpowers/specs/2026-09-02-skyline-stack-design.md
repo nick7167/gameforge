@@ -145,8 +145,15 @@ Follows the repo's golden rule — logic in GameCore, rendering in the app:
   effects (placement juice, collapse slow-mo), lighting rig per time-of-day.
 - **`Sources/UI`** (SwiftUI): menu, HUD (lean meter, Coins), shop, district
   picker, settings, revive offer overlay.
-- **`Sources/App`**: root navigation, StoreKit 2 purchase flow, ad SDK wrapper
-  (rewarded only), Game Center sign-in.
+- **`Sources/App`**: root navigation, RevenueCat purchase flow (wrapping
+  StoreKit 2 — entitlements for Remove Ads, consumable Coins, packs), ad SDK
+  wrapper (rewarded only), Game Center sign-in.
+
+**IAP stack decision:** RevenueCat (free tier: $0 up to $2,500/mo tracked
+revenue, then small % fee). Chosen over raw StoreKit 2 for drastically less
+purchase plumbing (entitlement checks, restore, consumable bookkeeping) and
+a free revenue dashboard. Apple's 15% cut (Small Business Program) applies
+regardless.
 
 ### 7.1 Backend — none (v1)
 
@@ -155,7 +162,7 @@ server, no database, no Cloudflare deployment:
 
 | Concern | Solution | Backend needed? |
 |---|---|---|
-| IAP purchase + validation | StoreKit 2 (on-device, Apple-hosted) | ❌ |
+| IAP purchase + validation | **RevenueCat SDK** (wraps StoreKit 2; their hosted backend does receipt validation, entitlements, restore) | ❌ (ours) |
 | Ads (rewarded video) | Ad SDK (Google AdMob) — talks to Google directly | ❌ |
 | Leaderboards | Game Center | ❌ |
 | Saves / skyline meta | Local + iCloud key-value store | ❌ |
@@ -183,7 +190,7 @@ This keeps v1 maximally simple: the app is the whole product.
 - Persistent skyline meta, daily seeded challenge (Game Center leaderboard),
   ~10 cosmetic district skins (2 free via rewarded ad)
 - Height milestones, share sheet for collapse clips
-- **No backend** — StoreKit 2 IAP, AdMob rewarded ads, Game Center, iCloud
+- **No backend** — RevenueCat IAP, AdMob rewarded ads, Game Center, iCloud
   saves; packs bundled in the app
 
 **Out (v2+):**
