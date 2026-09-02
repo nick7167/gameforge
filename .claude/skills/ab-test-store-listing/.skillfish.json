@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "ab-test-store-listing",
+  "owner": "Eronred",
+  "repo": "aso-skills",
+  "path": "skills/ab-test-store-listing",
+  "branch": "main",
+  "sha": "3c88135dd46ffc956749a5f808f007d38cd82ba3",
+  "source": "manual"
+}

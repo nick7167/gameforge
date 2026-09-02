@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "mobile-games",
+  "owner": "jantoniofc",
+  "repo": "skillsbank",
+  "path": "plugins/antigravity-awesome-skills-claude/skills/game-development/mobile-games",
+  "branch": "main",
+  "sha": "df920cb9c932c05143a624eeb90e6f66297bafef",
+  "source": "manual"
+}

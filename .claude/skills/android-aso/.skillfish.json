@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "android-aso",
+  "owner": "Eronred",
+  "repo": "aso-skills",
+  "path": "skills/android-aso",
+  "branch": "main",
+  "sha": "d7b9d8639655ad3c129743265e4155a950c1097a",
+  "source": "manual"
+}
