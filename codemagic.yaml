@@ -116,6 +116,11 @@ workflows:
       - name: Archive with manual signing
         script: |
           set -e
+          # errSecInternalComponent fix: unlock the login keychain and allow
+          # codesign to use imported keys without an interactive prompt.
+          keychain initialize
+          security unlock-keychain -p "" ~/Library/Keychains/login.keychain-db || true
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "" ~/Library/Keychains/login.keychain-db || true
           xcodebuild archive \
             -project GameForge.xcodeproj -scheme GameForge \
             -configuration Release -destination 'generic/platform=iOS' \
