@@ -77,10 +77,12 @@ workflows:
           # 1. Reuse persisted certificate if we have one (Apple caps
           #    Apple Distribution certs at 3). First run creates one and the
           #    p12 is persisted via a Codemagic env var group afterwards.
-          if [ -n "$GAMEFORGE_DIST_P12_BASE64" ]; then
-            echo "$GAMEFORGE_DIST_P12_BASE64" | base64 -d > build/gameforge-dist.p12
+          if [ -n "${GAMEFORGE_DIST_P12_BASE64:-}" ]; then
+            # Portable base64 decode (macOS BSD base64 uses -D, not -d)
+            python3 -c "import base64,sys,os; data=base64.b64decode(os.environ['GAMEFORGE_DIST_P12_BASE64']); sys.stdout.buffer.write(data)" > build/gameforge-dist.p12
+            ls -la build/gameforge-dist.p12
             CERT_ID=$(app-store-connect certificates list --type DISTRIBUTION --json \
-              | python3 -c "import json,sys; print(json.load(sys.stdin)[0]['id'])")
+              | python3 -c "import json,sys; d=json.load(sys.stdin); d=d['data'] if isinstance(d, dict) and 'data' in d else d; print(d[0]['id'])")
           else
             openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out build/dist.key
             CREATE_OUT=$(app-store-connect certificates create \
