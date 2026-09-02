@@ -88,7 +88,7 @@ final class TowerScene: SCNScene {
     pendingType = type
     let node = makeNode(for: type)
     node.name = "pending"
-    node.position = SCNVector3(-gridHalf, Float(placedCount) * districtHeight + 2.0, 0)
+    node.position = SCNVector3(CGFloat(-gridHalf), CGFloat(Float(placedCount) * districtHeight + 2.0), 0)
     rootNode.addChildNode(node)
     pendingNode = node
   }
@@ -129,23 +129,23 @@ final class TowerScene: SCNScene {
   /// Slides the pending district. Call once per frame from the SCNView delegate.
   func updateSlide() {
     guard let pending = pendingNode else { return }
-    var x = pending.position.x + slideVelocity * slideDirection
+    var x = Float(pending.position.x) + slideVelocity * slideDirection
     if x > gridHalf { x = gridHalf; slideDirection = -1 }
     if x < -gridHalf { x = -gridHalf; slideDirection = 1 }
-    pending.position.x = x
+    pending.position.x = CGFloat(x)
   }
 
   /// The current grid X of the pending district (snapped by GameCore rules).
   var pendingGridX: Int? {
     guard pendingNode != nil else { return nil }
-    return Int(round(pendingNode!.position.x / cellSize))
+    return Int(round(Float(pendingNode!.position.x) / cellSize))
   }
 
   /// Drops the pending district; physics takes over from here.
   func dropCurrentDistrict() {
     guard let pending = pendingNode, let type = pendingType else { return }
     pending.name = "district"
-    let gridX = Int(round(pending.position.x / cellSize))
+    let gridX = Int(round(Float(pending.position.x) / cellSize))
     pending.position.x = CGFloat(Float(gridX) * cellSize)
     let body = SCNPhysicsBody(type: .dynamic, shape: SCNPhysicsShape(geometry: pending.geometry!, options: nil))
     body.mass = Float(type.weight)
@@ -181,8 +181,8 @@ final class TowerScene: SCNScene {
       // SCNPhysicsBody.velocity is an SCNVector3 of Floats; compute the
       // magnitude manually (no .length() member).
       if let body = node.physicsBody, body.type == .dynamic {
-        let v = body.velocity
-        let speed = (v.x * v.x + v.y * v.y + v.z * v.z).squareRoot()
+        let velocity = body.velocity
+        let speed = (velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z).squareRoot()
         if speed < 0.05, node.presentation.position.y > 0 {
           body.type = .static
           onDistrictSettled?(true)
