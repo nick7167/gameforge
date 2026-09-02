@@ -14,6 +14,14 @@ struct RootView: View {
     @State private var summary: SkylineSession.RunSummary?
     @State private var meta = SkylinePersistence.load() ?? SkylineMeta()
 
+    init() {
+        let apiKey = Bundle.main.object(forInfoDictionaryKey: "REVENUECAT_API_KEY") as? String
+        _purchases = StateObject(wrappedValue: PurchaseService())
+        purchases.configure(apiKey: apiKey) { _ in
+            // Coin grants flow into the active game model's economy (Task 9 hook).
+        }
+    }
+
     var body: some View {
         switch phase {
         case .menu:

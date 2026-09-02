@@ -1,5 +1,6 @@
 import Foundation
 import GameCore
+import RevenueCat
 
 /// Purchase facade. Backed by RevenueCat when an API key is configured;
 /// degrades to a no-op otherwise so the game always runs.
@@ -22,22 +23,41 @@ final class PurchaseService: ObservableObject {
   func configure(apiKey: String?, onCoinsGranted: @escaping (Int) -> Void) {
     self.onCoinsGranted = onCoinsGranted
     guard let apiKey, !apiKey.isEmpty else { return }
+    Purchases.logLevel = .warn
+    Purchases.configure(with: apiKey)
     isConfigured = true
-    // Purchases.configure(with: apiKey) — wired with the SDK in Task 8.
   }
 
   func refreshEntitlements() async {
     guard isConfigured else { return }
-    // Task 8: fetch CustomerInfo, set removeAdsOwned / ownedPackIDs.
+    let info = try? await Purchases.shared.customerInfo()
+    removeAdsOwned = info?.entitlements["remove_ads"]?.isActive == true
+    ownedPackIDs = Set(info?.activeSubscriptions ?? [])
   }
 
   func purchase(productID: String) async -> Bool {
     guard isConfigured else { return false }
-    return false // Task 8 wires Purchases.shared.purchase(product:)
+    do {
+      let products = try await Purchases.shared.products([productID])
+      guard let product = products.first else { return false }
+      let result = try await Purchases.shared.purchase(product: product)
+      if result.userCancelled { return false }
+      await refreshEntitlements()
+      if let coins = Self.coinPackProductIDs[productID] {
+        onCoinsGranted(coins)
+      }
+      if productID == Self.removeAdsProductID {
+        removeAdsOwned = true
+      }
+      return true
+    } catch {
+      return false
+    }
   }
 
   func restore() async {
     guard isConfigured else { return }
+    _ = try? await Purchases.shared.restorePurchases()
     await refreshEntitlements()
   }
 
