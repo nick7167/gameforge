@@ -1,0 +1,61 @@
+name: GameForge
+
+options:
+  bundleIdPrefix: dev.adrez
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    CODE_SIGN_STYLE: Automatic
+    GENERATE_INFOPLIST_FILE: YES
+
+packages:
+  GameCore:
+    path: Packages/GameCore
+
+targets:
+  GameForge:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+    dependencies:
+      - package: GameCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.adrez.gameforge
+        PRODUCT_NAME: GameForge
+        INFOPLIST_KEY_CFBundleDisplayName: GameForge
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown"
+        CURRENT_PROJECT_VERSION: "1"
+
+  GameForgeTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests/AppTests
+    dependencies:
+      - target: GameForge
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  GameForge:
+    build:
+      targets:
+        GameForge: all
+        GameForgeTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - GameForgeTests

@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: SwiftLint
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SwiftLint
+        run: brew install swiftlint
+      - name: Lint
+        run: swiftlint
+
+  gamecore-tests:
+    name: GameCore tests
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run GameCore unit tests
+        working-directory: Packages/GameCore
+        run: swift test
+
+  app-build-test:
+    name: App build + smoke tests
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        run: xcodegen generate
+      - name: Pick simulator
+        run: |
+          SIM_ID=$(xcrun simctl list devices available | grep -oE '[A-F0-9-]{36}' | head -1)
+          echo "SIM_ID=$SIM_ID" >> "$GITHUB_ENV"
+      - name: Build app (unsigned)
+        run: |
+          xcodebuild \
+            -project GameForge.xcodeproj \
+            -scheme GameForge \
+            -destination "id=$SIM_ID" \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+      - name: Run smoke tests
+        run: |
+          xcodebuild \
+            -project GameForge.xcodeproj \
+            -scheme GameForge \
+            -destination "id=$SIM_ID" \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            test | tail -30

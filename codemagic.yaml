@@ -1,0 +1,43 @@
+workflows:
+  gameforge-testflight:
+    name: GameForge TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    integrations:
+      app_store_connect: vildsvar-app-store-connect
+
+    environment:
+      xcode: 26.6
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: dev.adrez.gameforge
+
+    scripts:
+      - name: Generate Xcode project
+        script: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Run GameCore tests
+        script: swift test
+        working_directory: $CM_BUILD_DIR/Packages/GameCore
+
+      - name: Apply Apple signing profiles
+        script: xcode-project use-profiles
+
+      - name: Build signed IPA
+        script: |
+          xcode-project build-ipa \
+            --project "$CM_BUILD_DIR/GameForge.xcodeproj" \
+            --scheme GameForge \
+            --archive-xcargs "CURRENT_PROJECT_VERSION=$BUILD_NUMBER"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
