@@ -1,49 +1,39 @@
 import SwiftUI
+import GameCore
 
+/// Run summary with milestone celebration and share (Poly Bridge lesson:
+/// the collapse/win moment is the viral content).
 struct GameOverScreen: View {
-    let score: Int
-    let bestScore: Int
+    let summary: SkylineSession.RunSummary
     let onReplay: () -> Void
     let onMenu: () -> Void
 
     var body: some View {
         VStack(spacing: 24) {
-            Spacer()
-            Text("Round over")
-                .font(.largeTitle.bold())
-                .foregroundStyle(.white)
-            Text("Score: \(score)")
-                .font(.title2.monospacedDigit())
-            if score >= bestScore {
-                Text("New best!")
-                    .font(.headline)
-                    .foregroundStyle(.yellow)
-            } else {
-                Text("Best: \(bestScore)")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+            if let milestone = summary.milestone {
+                Text("🏆 \(milestone.rawValue.capitalized) reached!")
+                    .font(.title2.bold())
+                    .foregroundStyle(.orange)
             }
-            Spacer()
-            Button(action: onReplay) {
-                Text("Play again")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding()
+            Text("\(summary.height) m")
+                .font(.system(size: 64, weight: .bold, design: .rounded))
+            HStack(spacing: 32) {
+                VStack {
+                    Text("\(summary.coinsEarned)").font(.title2.bold())
+                    Text("Coins").font(.caption)
+                }
+                VStack {
+                    Text("\(summary.xpEarned)").font(.title2.bold())
+                    Text("XP").font(.caption)
+                }
             }
-            .buttonStyle(.borderedProminent)
-            Button(action: onMenu) {
-                Text("Back to menu")
-                    .frame(maxWidth: .infinity)
+            ShareLink(item: "I built a \(summary.height) m skyline in Skyline Stack! 🏙️") {
+                Label("Share", systemImage: "square.and.arrow.up")
             }
-            .buttonStyle(.bordered)
-            .padding(.bottom, 32)
+            Button("Build again", action: onReplay)
+                .buttonStyle(.borderedProminent)
+            Button("Menu", action: onMenu)
         }
-        .padding(.horizontal, 40)
-        .frame(maxWidth: .infinity)
-        .background(Color(red: 0.10, green: 0.11, blue: 0.20).ignoresSafeArea())
+        .padding()
     }
-}
-
-#Preview {
-    GameOverScreen(score: 12, bestScore: 20, onReplay: {}, onMenu: {})
 }
