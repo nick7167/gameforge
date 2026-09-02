@@ -15,14 +15,17 @@ workflows:
         script: |
           mkdir -p build
           {
-            echo "=== app-store-connect version ==="
-            app-store-connect --version || true
-            echo "=== list-certificates ==="
-            app-store-connect list-certificates || true
-            echo "=== list-profiles ==="
-            app-store-connect list-profiles || true
-            echo "=== use-profiles (no project) ==="
-            xcode-project use-profiles || true
+            echo "=== generate project ==="
+            brew install xcodegen
+            xcodegen generate
+            echo "=== use-profiles with project ==="
+            xcode-project use-profiles \
+              --project=GameForge.xcodeproj \
+              --export-method=app-store || true
+            echo "=== keychain identities after use-profiles ==="
+            security find-identity -v -p codesigning || true
+            echo "=== downloaded profiles ==="
+            ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/" || true
           } 2>&1 | tee build/debug-signing.log
 
     artifacts:
