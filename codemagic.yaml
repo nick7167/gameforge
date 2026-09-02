@@ -46,6 +46,8 @@ workflows:
 
     environment:
       xcode: 26.6
+      groups:
+        - gameforge-signing   # GAMEFORGE_DIST_P12_BASE64 (secure) — see .env/README.md
       vars:
         P12_PASSWORD: gameforge-p12
         BUNDLE_ID_RESOURCE_ID: K4G2H6JYJJ
