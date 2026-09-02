@@ -21,8 +21,8 @@ packages:
     url: https://github.com/RevenueCat/purchases-ios.git
     from: 5.0.0
   GoogleMobileAds:
-    url: https://github.com/googleads/googleads-mobile-ios-examples.git
-    from: 11.0.0
+    url: https://github.com/googleads/swift-package-manager-google-mobile-ads.git
+    from: 13.0.0
 
 targets:
   GameForge:
@@ -33,7 +33,9 @@ targets:
     dependencies:
       - package: GameCore
       - package: RevenueCat
+        product: RevenueCat
       - package: GoogleMobileAds
+        product: GoogleMobileAds
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.adrez.gameforge
