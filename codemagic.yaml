@@ -14,14 +14,13 @@ workflows:
       - name: Inspect signing state
         script: |
           mkdir -p build
+          export HOMEBREW_NO_AUTO_UPDATE=1
           {
             echo "=== generate project ==="
             brew install xcodegen
             xcodegen generate
             echo "=== use-profiles with project ==="
-            xcode-project use-profiles \
-              --project=GameForge.xcodeproj \
-              --export-method=app-store || true
+            xcode-project use-profiles --project=GameForge.xcodeproj || true
             echo "=== keychain identities after use-profiles ==="
             security find-identity -v -p codesigning || true
             echo "=== downloaded profiles ==="
