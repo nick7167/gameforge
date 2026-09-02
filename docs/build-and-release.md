@@ -50,10 +50,29 @@ certificate; `xcode-project use-profiles` fetches/generates profiles for
 
 ## App Store Connect entities
 
-- App ID: `dev.adrez.gameforge` (explicit, registered via ASC API)
-- App record: "GameForge" (placeholder display name)
-- Internal TestFlight group: "App Store Connect Users" (default group,
-  contains the account holder)
+- App ID: `dev.adrez.gameforge` (explicit, registered via ASC API,
+  bundle-ID ID `K4G2H6JYJJ`)
+- Distribution profile: `gameforge-appstore` (created via ASC API, linked
+  to the Apple Distribution cert valid until 2027-09-01)
+- App record: **NOT created yet** — the ASC API key cannot create app
+  records (`CREATE` is not allowed for its role). One-time manual step by
+  the account holder, see "One-time manual setup" below.
+- Internal TestFlight group: "App Store Connect Users" (created
+  automatically with the app record)
+
+## One-time manual setup (account holder, ~5 minutes)
+
+1. Open [App Store Connect](https://appstoreconnect.apple.com) → My Apps → `+` New App:
+   - Name: `GameForge` (placeholder; if taken, any unique working name)
+   - Primary language: English (U.S.) (or Danish)
+   - Bundle ID: `dev.adrez.gameforge`
+   - SKU: `GAMEFORGE-IOS-001`
+2. Trigger a Codemagic build (see "Shipping to the phone"); it now
+   uploads to TestFlight automatically.
+3. On the iPhone: open TestFlight → the build appears under the account
+   holder's Apple ID automatically (internal tester via the default
+   "App Store Connect Users" group).
+
 
 ## Versioning
 
