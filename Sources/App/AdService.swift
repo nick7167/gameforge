@@ -27,9 +27,16 @@ final class AdMobService: NSObject, RewardedAdService, @unchecked Sendable {
   private var loadedUnitID: String?
 
   static func configureIfNeeded() {
-    if Bundle.main.object(forInfoDictionaryKey: "GADApplicationIdentifier") != nil {
-      MobileAds.shared.start(completionHandler: nil)
+    guard let appID = Bundle.main.object(forInfoDictionaryKey: "GADApplicationIdentifier") as? String,
+          appID.hasPrefix("ca-app-pub-"), appID.contains("~") else {
+      // No valid app ID: do NOT touch the SDK at all. (The SDK also
+      // auto-initializes when linked — but with a valid plist key now
+      // guaranteed by project.yml, that path is safe too. See the v23
+      // launch-crash postmortem: missing key → GADInvalidInitialization
+      // exception at startup.)
+      return
     }
+    MobileAds.shared.start(completionHandler: nil)
   }
 
   func isReady() async -> Bool {

@@ -48,13 +48,23 @@ targets:
         # (HTTPS etc.) — no proprietary crypto. false = exempt, so TestFlight
         # builds skip the "Missing Compliance" manual step entirely.
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
-        # AdMob test app ID (Google's official test value) — replace with the
-        # real one when the AdMob account is set up. CI builds work with this.
-        INFOPLIST_KEY_GADApplicationIdentifier: ca-app-pub-3940256099942544~1458002511
-        # RevenueCat public API key — replace via a private xcconfig when set up.
-        # Empty/missing = purchases no-op and the game stays fully playable.
-        INFOPLIST_KEY_REVENUECAT_API_KEY: ""
         CURRENT_PROJECT_VERSION: "1"
+    info:
+      path: GameForge/Info.plist
+      properties:
+        # AdMob test app ID (Google's official test value) — replace with the
+        # real one when the AdMob account is set up. CRITICAL: the Google
+        # Mobile Ads SDK raises a fatal GADInvalidInitializationException at
+        # launch if this key is missing — it MUST be in the built Info.plist.
+        # (INFOPLIST_KEY_* above only covers a known Apple allowlist; arbitrary
+        # keys must go here. Root cause of the v23 launch crash.)
+        GADApplicationIdentifier: ca-app-pub-3940256099942544~1458002511
+        # RevenueCat public API key — replace when the account is set up.
+        # Empty/missing = purchases no-op and the game stays fully playable.
+        REVENUECAT_API_KEY: ""
+        GADSDKDebugSettings:
+          # Keep AdMob quiet in TestFlight builds; remove for release debugging.
+          enableDebugLogging: false
 
   GameForgeTests:
     type: bundle.unit-test
