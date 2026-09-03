@@ -38,6 +38,7 @@ public struct SkylineSession: Sendable {
 
   public mutating func handleCollapse(cause: CollapseCause, tick: UInt64) -> CollapseOutcome {
     perfectStreak = 0
+    tower.relieveAfterCollapse()
     return collapse.resolveCollapse(cause: cause, tower: &tower)
   }
 

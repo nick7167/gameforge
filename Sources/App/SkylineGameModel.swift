@@ -57,13 +57,25 @@ final class SkylineGameModel: ObservableObject {
   /// physics-feedback checks, and the wind clock. This is the game's pulse —
   /// without it nothing moves (the v24 "nothing happens" bug).
   func frameUpdate() {
+    // Camera follows at most once per 30 frames — running an SCNAction
+    // every frame piled up animations and froze the camera (v25 bug).
+    if tick % 30 == 0 {
+      scene.followTowerTop(height: Float(session.tower.districts.count))
+    }
     advanceTick()
-    // Keep the camera framing the growing tower.
-    scene.followTowerTop(height: Float(session.tower.districts.count))
+    // Death by instability: lean at ceiling → structural collapse.
+    if !runOver, session.tower.lean >= 0.92, !collapsePending {
+      collapsePending = true
+      handleCollapse(.leanOverflow)
+    }
   }
+
+  /// Guards against double-collapse in the same frame.
+  private var collapsePending = false
 
   /// Drops the hovering district and applies GameCore rules.
   func dropPendingDistrict() {
+    collapsePending = false
     guard let gridX = scene.pendingGridX else { return }
     let result = session.placeDistrict(typeID: currentTypeID, at: GridPoint(x: gridX, z: 0), tick: tick)
     if case .placed = result {

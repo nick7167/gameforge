@@ -47,6 +47,14 @@ public struct TowerState: Sendable {
     case rejected(reason: String)
   }
 
+  /// True when lean has hit the danger ceiling — the tower is about to
+  /// collapse. The app layer reads this to shake the screen, flash the
+  /// HUD, and give the player a last-chance moment.
+  public var isCritical: Bool { lean >= 0.92 }
+
+  /// Lean added per placement, tuned so that sloppy play (3–4 consecutive
+  /// mediocre drops) approaches collapse but one careless spam-tap doesn't
+  /// instantly kill you. Perfect placements decay lean; bad ones compound.
   public mutating func place(_ type: DistrictType, at origin: GridPoint, tick: UInt64) -> PlaceResult {
     guard canPlace(type, at: origin) else {
       return .rejected(reason: "unsupported")
@@ -57,8 +65,15 @@ public struct TowerState: Sendable {
     let perfect = rules.isPerfect(offset: offset)
     districts.append(District(typeID: type.id, gridOrigin: snapped, placedAtTick: tick))
     // Lean: off-center mass adds; recent good placements decay it slightly.
+    // Perfect drops actively straighten the tower — skill rewarded.
     let contribution = rules.alignmentError(offset: offset) * Double(type.weight) * 0.05
-    lean = min(1.0, max(0, lean * 0.9 - (perfect ? 0.02 : 0) + contribution))
+    if perfect {
+      lean = max(0, lean - 0.06)
+    } else if contribution > 0 {
+      lean = min(1.0, lean * 0.92 + contribution)
+    } else {
+      lean = max(0, lean * 0.92)
+    }
     return .placed(perfect: perfect)
   }
 
@@ -89,5 +104,12 @@ public struct TowerState: Sendable {
     guard let top = districts.popLast() else { return nil }
     curedDistrictIDs.remove(top.placedAtTick)
     return top
+  }
+
+  /// After a collapse the unstable top is gone — the tower partially
+  /// recovers. Without this, one bad stretch makes lean stuck at max and
+  /// every subsequent placement keeps the tower at death's door.
+  public mutating func relieveAfterCollapse() {
+    lean *= 0.55
   }
 }

@@ -5,6 +5,16 @@ enum AppPhase: Equatable {
     case menu, playing, shop, gameOver
 }
 
+/// Launch-argument routing for UI-test screenshots in CI.
+enum UITestConfig {
+    static var skipToGameplay: Bool {
+        ProcessInfo.processInfo.arguments.contains("-UITestSkipToGameplay")
+    }
+    static var skipToShop: Bool {
+        ProcessInfo.processInfo.arguments.contains("-UITestSkipToShop")
+    }
+}
+
 /// Owns app navigation and the long-lived services. All gameplay state
 /// lives in `SkylineGameModel`/`SkylineSession`; this view drives and renders.
 struct RootView: View {
@@ -18,7 +28,18 @@ struct RootView: View {
         let apiKey = Bundle.main.object(forInfoDictionaryKey: "REVENUECAT_API_KEY") as? String
         _purchases = StateObject(wrappedValue: PurchaseService())
         purchases.configure(apiKey: apiKey) { _ in
-            // Coin grants flow into the active game model's economy (Task 9 hook).
+            // Coin grants flow into the active game model's economy.
+        }
+        // UI-test routing (screenshots in CI): launch args skip menus so the
+        // pipeline can capture gameplay deterministically.
+        if UITestConfig.skipToGameplay {
+            let meta = SkylinePersistence.load() ?? SkylineMeta()
+            _meta = State(initialValue: meta)
+            let model = SkylineGameModel(meta: meta, startingCoins: 0, ads: NoOpAdService())
+            _gameModel = State(initialValue: model)
+            _phase = State(initialValue: .playing)
+        } else if UITestConfig.skipToShop {
+            _phase = State(initialValue: .shop)
         }
     }
 
@@ -52,7 +73,8 @@ struct RootView: View {
                             lean: model.session.tower.lean,
                             coins: model.session.economy.coins,
                             height: model.session.tower.districts.count * 10,
-                            windIncoming: model.windIncoming
+                            windIncoming: model.windIncoming,
+                            onQuit: { endRunAndExit() }
                         )
                         .padding(.top, 8)
                         Spacer()
@@ -96,8 +118,18 @@ struct RootView: View {
         gameModel = model
         phase = .playing
     }
-}
 
-#Preview {
-    RootView()
+    /// Ends the run early (player quits) and returns to the menu.
+    private func endRunAndExit() {
+        guard let model = gameModel else { return }
+        summary = model.endRun()
+        meta = model.session.meta
+        SkylinePersistence.save(meta)
+        gameModel = nil
+        phase = .menu
+    }
+
+    #Preview {
+        RootView()
+    }
 }

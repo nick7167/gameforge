@@ -119,15 +119,18 @@ final class TowerScene: SCNScene {
 
   private var cameraRig: SCNNode?
 
-  /// Keeps the tower top framed as the tower grows.
+  /// Keeps the tower top framed as the tower grows. Uses direct position
+  /// lerp instead of SCNActions — running a new action every call piled up
+  /// hundreds of competing animations (the v25 frozen-camera bug).
   func followTowerTop(height: Float) {
     guard let camera = cameraRig else { return }
     let targetY = max(7.0, height * 0.6 + 4.0)
     let lookY = max(1.5, height * 0.55)
-    let action = SCNAction.move(to: SCNVector3(11, targetY, 11), duration: 0.4)
-    action.timingMode = .easeInEaseOut
-    camera.runAction(action)
-    camera.look(at: SCNVector3(0, lookY, 0))
+    // Smooth exponential approach; runs in tick() so no action stacking.
+    let current = camera.simdPosition
+    let target = simd_float3(11, targetY, 11)
+    camera.simdPosition = current + (target - current) * 0.08
+    camera.look(at: SCNVector3(0, lookY, 0), up: SCNVector3(0, 1, 0), localUp: SCNVector3(0, 1, 0))
   }
 
   // MARK: Placement

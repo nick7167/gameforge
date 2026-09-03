@@ -1,13 +1,14 @@
 import SwiftUI
 import GameCore
 
-/// In-run HUD: lean meter, Coins, height. Minimal — the tower is the screen.
-/// Uses translucent light material + dark text so it reads against the sky.
+/// In-run HUD: lean meter, Coins, height, quit button. Uses translucent
+/// light material + dark text so it reads against the sky.
 struct GameHUD: View {
   let lean: Double
   let coins: Int
   let height: Int
   let windIncoming: Bool
+  var onQuit: (() -> Void)?
 
   var body: some View {
     VStack(spacing: 8) {
@@ -19,6 +20,16 @@ struct GameHUD: View {
         Text("\(height) m")
           .font(.headline.monospacedDigit())
           .foregroundStyle(.brown)
+        if let onQuit {
+          Button(action: onQuit) {
+            Image(systemName: "xmark")
+              .font(.headline)
+              .foregroundStyle(.brown)
+              .padding(8)
+              .background(.ultraThinMaterial, in: Circle())
+          }
+          .accessibilityIdentifier("hud-quit-button")
+        }
       }
       .padding(.horizontal, 14)
       .padding(.vertical, 8)
