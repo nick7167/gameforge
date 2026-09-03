@@ -41,10 +41,8 @@ struct TowerSceneView: UIViewRepresentable {
     // The renderer callback fires on a render thread; hop to the main actor
     // before touching game state (Swift 6 isolation).
     nonisolated func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
-      DispatchQueue.main.async { [weak self] in
-        MainActor.assumeIsolated {
-          self?.onFrame?()
-        }
+      Task { @MainActor [weak self] in
+        self?.onFrame?()
       }
     }
   }
