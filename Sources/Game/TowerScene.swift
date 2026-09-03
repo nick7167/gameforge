@@ -321,24 +321,6 @@ extension TowerScene {
   }
 
   /// Rising sparkle ring on a perfect drop.
-  private func playPerfectSparkle(on node: SCNNode) {
-    for sparkIndex in 0..<6 {
-      let spark = SCNSphere(radius: 0.06)
-      let material = SCNMaterial()
-      material.diffuse.contents = UIColor(red: 1.0, green: 0.87, blue: 0.4, alpha: 1)
-      material.emission.contents = UIColor(red: 1.0, green: 0.85, blue: 0.3, alpha: 1)
-      spark.materials = [material]
-      let sparkNode = SCNNode(geometry: spark)
-      let angle = Float(sparkIndex) / 6 * Float.pi * 2
-      sparkNode.position = node.simdPosition + simd_float3(cos(angle) * 0.8, 0.4, sin(angle) * 0.8)
-      rootNode.addChildNode(sparkNode)
-      let up = SCNAction.move(by: SCNVector3(0, 1.2, 0), duration: 0.5)
-      up.timingMode = .easeOut
-      sparkNode.runAction(.sequence([up, .fadeOpacity(to: 0, duration: 0.2), .removeFromParentNode()]))
-    }
-  }
-
-  /// Rising sparkle ring on a perfect drop.
   func playPerfectSparkle(on node: SCNNode) {
     for sparkIndex in 0..<6 {
       let spark = SCNSphere(radius: 0.06)
