@@ -152,6 +152,31 @@ struct RootView: View {
         phase = .menu
     }
 
+    /// Coins persist across runs via the economy of the latest session.
+    private var coins: Int {
+        gameModel?.session.economy.coins ?? 0
+    }
+
+    /// Best height reached (each district = 10 m), from the saved meta.
+    private var bestHeight: Int {
+        meta.savedDistricts.count * 10
+    }
+
+    private func startRun() {
+        let ads: RewardedAdService = UITestConfig.skipToGameplay ? NoOpAdService() : AdMobService()
+        let model = SkylineGameModel(meta: meta, startingCoins: coins, ads: ads)
+        model.onRunOver = { [weak model] in
+            guard let model else { return }
+            let gameCenter = GameCenterService()
+            summary = model.endRun(gameCenter: gameCenter)
+            meta = model.session.meta
+            SkylinePersistence.save(meta)
+            phase = .gameOver
+        }
+        gameModel = model
+        phase = .playing
+    }
+
     #Preview {
         RootView()
     }
