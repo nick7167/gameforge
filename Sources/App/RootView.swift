@@ -34,8 +34,19 @@ struct RootView: View {
         case .playing:
             if let model = gameModel {
                 ZStack {
-                    TowerSceneView(scene: model.scene)
-                        .ignoresSafeArea()
+                    // Warm sky gradient behind the 3D scene (scene bg is
+                    // transparent-capable; this guarantees contrast).
+                    LinearGradient(
+                        colors: [Color(red: 0.23, green: 0.16, blue: 0.28),
+                                 Color(red: 0.85, green: 0.66, blue: 0.48),
+                                 Color(red: 0.98, green: 0.88, blue: 0.70)],
+                        startPoint: .top, endPoint: .bottom
+                    )
+                    .ignoresSafeArea()
+                    TowerSceneView(scene: model.scene, onFrame: {
+                        model.frameUpdate()
+                    })
+                    .ignoresSafeArea()
                     VStack {
                         GameHUD(
                             lean: model.session.tower.lean,

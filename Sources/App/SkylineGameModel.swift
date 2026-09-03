@@ -42,13 +42,24 @@ final class SkylineGameModel: ObservableObject {
   // MARK: Placement
 
   var currentTypeID: String {
-    session.meta.unlockedTypeIDs.sorted().first ?? "homes"
+    // Cycle through unlocked types for variety instead of always "homes".
+    let unlocked = UnlockLadder.unlockedTypes(level: session.meta.level)
+    return unlocked[placements % unlocked.count].id
   }
 
   private func spawnNextDistrict() {
     let typeID = currentTypeID
     guard let type = DistrictType.v1Catalog.first(where: { $0.id == typeID }) else { return }
     scene.spawnDistrict(type)
+  }
+
+  /// Called every rendered frame by the scene view. Drives the block slide,
+  /// physics-feedback checks, and the wind clock. This is the game's pulse —
+  /// without it nothing moves (the v24 "nothing happens" bug).
+  func frameUpdate() {
+    advanceTick()
+    // Keep the camera framing the growing tower.
+    scene.followTowerTop(height: Float(session.tower.districts.count))
   }
 
   /// Drops the hovering district and applies GameCore rules.
@@ -58,6 +69,8 @@ final class SkylineGameModel: ObservableObject {
     if case .placed = result {
       scene.dropCurrentDistrict()
       tick += 1
+      // Spawn the next hovering block immediately — the loop continues.
+      spawnNextDistrict()
     } else {
       // Illegal placement: the district stays hovering; nudge the slide.
       scene.removePending()

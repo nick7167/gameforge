@@ -25,6 +25,7 @@ final class TowerScene: SCNScene {
 
   override init() {
     super.init()
+    background.contents = skyGradient()
     setupLighting()
     setupFoundation()
     setupCamera()
@@ -35,31 +36,60 @@ final class TowerScene: SCNScene {
     fatalError("TowerScene is created in code")
   }
 
+  /// Monument Minimalism sky: warm dawn gradient (deep plum → sand → gold).
+  private func skyGradient() -> UIImage {
+    let size = CGSize(width: 8, height: 64)
+    let renderer = UIGraphicsImageRenderer(size: size)
+    return renderer.image { ctx in
+      let colors = [
+        UIColor(red: 0.23, green: 0.16, blue: 0.28, alpha: 1).cgColor,
+        UIColor(red: 0.85, green: 0.66, blue: 0.48, alpha: 1).cgColor,
+        UIColor(red: 0.98, green: 0.88, blue: 0.70, alpha: 1).cgColor
+      ]
+      let gradient = CGGradient(
+        colorsSpace: CGColorSpaceCreateDeviceRGB(),
+        colors: colors as CFArray,
+        locations: [0.0, 0.55, 1.0]
+      )!
+      ctx.cgContext.drawLinearGradient(
+        gradient,
+        start: CGPoint(x: 0, y: 0),
+        end: CGPoint(x: 0, y: size.height),
+        options: []
+      )
+    }
+  }
+
   // MARK: Setup
 
   private func setupLighting() {
+    // Key light: warm late-afternoon sun, casting soft shadows.
     let sun = SCNNode()
     sun.light = SCNLight()
     sun.light?.type = .directional
-    sun.light?.intensity = 900
-    sun.eulerAngles = SCNVector3(-Float.pi / 3, Float.pi / 6, 0)
+    sun.light?.intensity = 750
+    sun.light?.color = UIColor(red: 1.0, green: 0.92, blue: 0.80, alpha: 1)
+    sun.light?.castsShadow = true
+    sun.light?.shadowMode = .deferred
+    sun.light?.shadowSampleCount = 16
+    sun.light?.shadowRadius = 6
+    sun.light?.shadowColor = UIColor(red: 0.15, green: 0.10, blue: 0.18, alpha: 0.55)
+    sun.eulerAngles = SCNVector3(-Float.pi / 3.2, Float.pi / 5, 0)
     rootNode.addChildNode(sun)
 
+    // Ambient bounce: cool tint from the sky so shadows aren't dead black.
     let ambient = SCNNode()
     ambient.light = SCNLight()
     ambient.light?.type = .ambient
-    ambient.light?.intensity = 250
-    ambient.light?.color = UIColor(red: 1.0, green: 0.9, blue: 0.8, alpha: 1)
+    ambient.light?.intensity = 380
+    ambient.light?.color = UIColor(red: 0.85, green: 0.80, blue: 0.95, alpha: 1)
     rootNode.addChildNode(ambient)
   }
 
   private func setupFoundation() {
     let side = CGFloat(gridHalf * 2 + 2)
-    let geometry = SCNBox(width: side, height: 0.6, length: side, chamferRadius: 0.1)
-    let material = SCNMaterial()
-    material.diffuse.contents = UIColor(red: 0.82, green: 0.74, blue: 0.62, alpha: 1)
-    material.roughness.contents = 0.95
-    geometry.materials = [material]
+    let geometry = SCNBox(width: side, height: 0.6, length: side, chamferRadius: 0.12)
+    geometry.materials = [foundationMaterial()]
     let node = SCNNode(geometry: geometry)
     node.position = SCNVector3(0, -0.3, 0)
     node.physicsBody = SCNPhysicsBody(type: .static, shape: nil)
@@ -67,14 +97,27 @@ final class TowerScene: SCNScene {
     rootNode.addChildNode(node)
   }
 
+  /// Sandstone base slab.
+  private func foundationMaterial() -> SCNMaterial {
+    let material = SCNMaterial()
+    material.diffuse.contents = UIColor(red: 0.76, green: 0.62, blue: 0.47, alpha: 1)
+    material.roughness.contents = 0.95
+    material.lightingModel = .physicallyBased
+    return material
+  }
+
   private func setupCamera() {
     let cameraNode = SCNNode()
     cameraNode.camera = SCNCamera()
-    cameraNode.camera?.fieldOfView = 55
-    cameraNode.position = SCNVector3(9, 8, 9)
-    cameraNode.look(at: SCNVector3(0, 2, 0))
+    cameraNode.camera?.fieldOfView = 45
+    cameraNode.camera?.bloomIntensity = 0.25
+    cameraNode.position = SCNVector3(11, 7, 11)
+    cameraNode.look(at: SCNVector3(0, 1.5, 0))
     rootNode.addChildNode(cameraNode)
+    cameraRig = cameraNode
   }
+
+  private var cameraRig: SCNNode?
 
   // MARK: Placement
 
@@ -111,18 +154,21 @@ final class TowerScene: SCNScene {
   /// Monument Minimalism: sandstone/terracotta palette keyed by type id.
   private func material(for type: DistrictType) -> SCNMaterial {
     let material = SCNMaterial()
+    material.lightingModel = .physicallyBased
+    // Slightly deeper, warmer palette than before — the old colors washed out.
     let palette: [String: UIColor] = [
-      "homes": UIColor(red: 0.91, green: 0.84, blue: 0.72, alpha: 1),
-      "shops": UIColor(red: 0.85, green: 0.72, blue: 0.60, alpha: 1),
-      "park": UIColor(red: 0.72, green: 0.78, blue: 0.55, alpha: 1),
-      "office": UIColor(red: 0.78, green: 0.72, blue: 0.66, alpha: 1),
-      "tower": UIColor(red: 0.88, green: 0.80, blue: 0.68, alpha: 1),
-      "temple": UIColor(red: 0.80, green: 0.70, blue: 0.58, alpha: 1),
-      "garden": UIColor(red: 0.68, green: 0.76, blue: 0.58, alpha: 1),
-      "observatory": UIColor(red: 0.72, green: 0.68, blue: 0.62, alpha: 1)
+      "homes": UIColor(red: 0.93, green: 0.80, blue: 0.60, alpha: 1),
+      "shops": UIColor(red: 0.85, green: 0.58, blue: 0.42, alpha: 1),
+      "park": UIColor(red: 0.55, green: 0.66, blue: 0.40, alpha: 1),
+      "office": UIColor(red: 0.62, green: 0.52, blue: 0.48, alpha: 1),
+      "tower": UIColor(red: 0.88, green: 0.70, blue: 0.48, alpha: 1),
+      "temple": UIColor(red: 0.78, green: 0.60, blue: 0.42, alpha: 1),
+      "garden": UIColor(red: 0.48, green: 0.62, blue: 0.40, alpha: 1),
+      "observatory": UIColor(red: 0.52, green: 0.48, blue: 0.55, alpha: 1)
     ]
-    material.diffuse.contents = palette[type.id] ?? UIColor(red: 0.85, green: 0.78, blue: 0.66, alpha: 1)
-    material.roughness.contents = 0.9
+    material.diffuse.contents = palette[type.id] ?? UIColor(red: 0.85, green: 0.72, blue: 0.52, alpha: 1)
+    material.roughness.contents = 0.85
+    material.metalness.contents = 0.0
     return material
   }
 
@@ -156,6 +202,16 @@ final class TowerScene: SCNScene {
     placementHeights[ObjectIdentifier(pending)] = pending.simdPosition.y
     pendingNode = nil
     pendingType = nil
+    playDropJuice(on: pending)
+  }
+
+  /// Placement feedback: squash-and-stretch scale pulse on the block.
+  private func playDropJuice(on node: SCNNode) {
+    let squash = SCNAction.scale(to: 0.82, duration: 0.07)
+    squash.timingMode = .easeIn
+    let recover = SCNAction.scale(to: 1.0, duration: 0.22)
+    recover.timingMode = .easeOut
+    node.runAction(.sequence([squash, recover]))
   }
 
   /// Removes the top placed district (collapse) with a small pop animation.
@@ -164,6 +220,12 @@ final class TowerScene: SCNScene {
     top.name = "falling"
     placementHeights.removeValue(forKey: ObjectIdentifier(top))
     collapseReported = false
+    // Fade the lost district out as it tumbles away.
+    top.runAction(.sequence([
+      .wait(duration: 1.2),
+      .fadeOpacity(to: 0.0, duration: 0.5),
+      .removeFromParentNode()
+    ]))
   }
 
   // MARK: Physics feedback
