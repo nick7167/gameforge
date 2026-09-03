@@ -31,7 +31,10 @@
 
   function websocketUrl() {
     const key = sessionKey();
-    return 'ws://' + window.location.host + (key ? '/?key=' + encodeURIComponent(key) : '');
+    // Use the same scheme as the page (wss on HTTPS) to avoid mixed-content blocks
+    // when the companion is exposed through an HTTPS proxy (e.g. Codespaces ports).
+    const scheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    return scheme + window.location.host + (key ? '/?key=' + encodeURIComponent(key) : '');
   }
 
   function reloadAfterRecovery() {
