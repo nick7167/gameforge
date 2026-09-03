@@ -20,11 +20,16 @@ final class SkylineGameModel: ObservableObject {
   /// Autoplay demo mode: drops blocks automatically for CI gameplay video.
   private let autoplay: Bool
   private var lastAutoDropTick: UInt64 = 0
+  /// Placement tick: advances once per successful drop. Drives GameCore
+  /// placement ticks, wind scheduling, and autoplay gating.
+  private var tick: UInt64 = 0
   private var wind: WindSystem
   private var nextGustTick: UInt64 = 0
   private var currentGust: WindSystem.Gust?
-  private var tick: UInt64 = 0
-  private var settleTimer: Timer?
+  /// Render-frame counter — advances EVERY frame (unlike `tick`, which only
+  /// advances on placement; that conflation is why the HUD showed 0m/0 coins:
+  /// camera + height refreshed once every 10 DROPS instead of 10 frames).
+  private var frameCounter: UInt64 = 0
 
   var onRunOver: (() -> Void)?
 
@@ -63,9 +68,10 @@ final class SkylineGameModel: ObservableObject {
   /// physics-feedback checks, and the wind clock. This is the game's pulse —
   /// without it nothing moves (the v24 "nothing happens" bug).
   func frameUpdate() {
+    frameCounter += 1
     // Camera reframes at most every 10 frames (~6×/sec) — frequent enough
     // to keep the block in frame, cheap enough to stay smooth.
-    if tick % 10 == 0 {
+    if frameCounter % 10 == 0 {
       scene.followTowerTop(height: Float(session.tower.districts.count) + 2)
       heightMeters = scene.towerHeightMeters
     }
@@ -101,6 +107,10 @@ final class SkylineGameModel: ObservableObject {
       scene.dropCurrentDistrict(perfect: perfect)
       tick += 1
       comboStreak = perfect ? comboStreak + 1 : 0
+      // Refresh HUD stats immediately: coins/height mutate session and the
+      // scene in place, so @Published alone wouldn't fire here.
+      heightMeters = scene.towerHeightMeters
+      objectWillChange.send()
       if perfect {
         showPerfect = true
         perfectClearTask?.cancel()
