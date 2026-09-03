@@ -124,19 +124,32 @@ final class TowerScene: SCNScene {
 
   private var cameraRig: SCNNode?
 
-  /// Keeps the tower top framed as the tower grows. Uses direct position
-  /// lerp instead of SCNActions — running a new action every call piled up
-  /// hundreds of competing animations (the v25 frozen-camera bug).
+  /// Keeps the WHOLE tower plus the incoming block framed. The camera
+  /// distance grows with the tower so it never fills the screen — the old
+  /// version chased the top and blocks flew over the camera.
   func followTowerTop(height: Float) {
     guard let camera = cameraRig else { return }
-    let targetY = max(7.0, height * 0.6 + 4.0)
-    let lookY = max(1.5, height * 0.55)
-    // Smooth exponential approach; runs in tick() so no action stacking.
+    let towerTop = max(2.0, height * districtHeight)
+    // Look at the midpoint between tower top and the hovering block.
+    let lookY = towerTop + 1.5
+    // Pull the camera back proportionally so the full tower fits: 45° FOV
+    // needs distance ≈ framing height / tan(22.5°) ≈ 2.4 × framing height.
+    let framingHeight = towerTop + 6.0
+    let distance = max(14.0, framingHeight * 2.1)
+    let target = simd_float3(distance * 0.62, towerTop * 0.72 + 4.0, distance * 0.62)
     let current = camera.simdPosition
-    let target = simd_float3(11, targetY, 11)
-    camera.simdPosition = current + (target - current) * 0.08
-    // Default front vector — correct for cameras (they look down -Z).
+    camera.simdPosition = current + (target - current) * 0.06
     camera.look(at: SCNVector3(0, lookY, 0))
+  }
+
+  /// Real tower height in meters, from the top district's world position.
+  /// (Counting districts × 10 lied once the tower started wobbling.)
+  var towerHeightMeters: Int {
+    let topY = rootNode.childNodes
+      .filter { $0.name == "district" }
+      .map { $0.simdPosition.y }
+      .max() ?? 0
+    return max(0, Int((topY + 0.6) * 10))
   }
 
   // MARK: Placement

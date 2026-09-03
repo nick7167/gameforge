@@ -95,7 +95,7 @@ struct RootView: View {
                         GameHUD(
                             lean: model.session.tower.lean,
                             coins: model.session.economy.coins,
-                            height: model.session.tower.districts.count * 10,
+                            height: model.heightMeters,
                             windIncoming: model.windIncoming,
                             onQuit: { endRunAndExit() }
                         )

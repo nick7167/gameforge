@@ -32,7 +32,9 @@ struct GameHUD: View {
         }
       }
 
-      // Lean meter — big, rounded, with label.
+      // Stability meter — shows how SAFE the tower is (full = safe).
+      // Filling with lean confused everyone: the bar grew as you got closer
+      // to dying, which reads as "progress". This direction is honest.
       VStack(alignment: .leading, spacing: 4) {
         Text(lean > 0.7 ? "DANGER!" : "Stability")
           .font(.caption2.weight(.heavy))
@@ -42,7 +44,7 @@ struct GameHUD: View {
             Capsule().fill(.black.opacity(0.3))
             Capsule()
               .fill(leanColor)
-              .frame(width: max(16, proxy.size.width * lean))
+              .frame(width: max(16, proxy.size.width * (1 - lean)))
               .animation(.spring(response: 0.3), value: lean)
           }
         }

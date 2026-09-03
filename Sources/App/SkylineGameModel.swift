@@ -11,6 +11,8 @@ final class SkylineGameModel: ObservableObject {
   @Published private(set) var runOver = false
   @Published private(set) var lastSummary: SkylineSession.RunSummary?
   @Published private(set) var windIncoming = false
+  /// Real tower height in meters, updated from the scene every 10 frames.
+  @Published private(set) var heightMeters = 0
 
   /// The scene is owned here; RootView embeds it via TowerSceneView.
   let scene: TowerScene
@@ -65,13 +67,14 @@ final class SkylineGameModel: ObservableObject {
     // to keep the block in frame, cheap enough to stay smooth.
     if tick % 10 == 0 {
       scene.followTowerTop(height: Float(session.tower.districts.count) + 2)
+      heightMeters = scene.towerHeightMeters
     }
     advanceTick()
-    // Autoplay demo: drop when the block nears the slide edge, min ~1.2 s
-    // between drops so the video looks like deliberate play.
+    // Autoplay demo: drop when the block nears the CENTER (looks like skilled
+    // play on video — the tower stacks straight and grows tall).
     if autoplay, !runOver, pendingRevive == nil,
        let gridX = scene.pendingGridX,
-       abs(gridX) >= 2, tick - lastAutoDropTick > 70 {
+       abs(gridX) <= 1, tick - lastAutoDropTick > 90 {
       lastAutoDropTick = tick
       dropPendingDistrict()
     }
