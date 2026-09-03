@@ -202,7 +202,7 @@ final class TowerScene: SCNScene {
   }
 
   /// Drops the pending district; physics takes over from here.
-  func dropCurrentDistrict() {
+  func dropCurrentDistrict(perfect: Bool = false) {
     guard let pending = pendingNode, let type = pendingType else { return }
     pending.name = "district"
     let gridX = Int(round(pending.simdPosition.x / cellSize))
@@ -216,16 +216,8 @@ final class TowerScene: SCNScene {
     placementHeights[ObjectIdentifier(pending)] = pending.simdPosition.y
     pendingNode = nil
     pendingType = nil
-    playDropJuice(on: pending)
-  }
-
-  /// Placement feedback: squash-and-stretch scale pulse on the block.
-  private func playDropJuice(on node: SCNNode) {
-    let squash = SCNAction.scale(to: 0.82, duration: 0.07)
-    squash.timingMode = .easeIn
-    let recover = SCNAction.scale(to: 1.0, duration: 0.22)
-    recover.timingMode = .easeOut
-    node.runAction(.sequence([squash, recover]))
+    playDropJuice(on: pending, perfect: perfect)
+    if perfect { playPerfectSparkle(on: pending) }
   }
 
   /// Removes the top placed district (collapse) with a small pop animation.
@@ -299,6 +291,68 @@ final class TowerScene: SCNScene {
     physicsWorld.speed = 0.25
     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
       self?.physicsWorld.speed = 1
+    }
+  }
+
+}
+
+// MARK: - Placement Feedback Effects
+
+extension TowerScene {
+  /// Placement feedback: squash-and-stretch scale pulse on the block.
+  private func playDropJuice(on node: SCNNode, perfect: Bool) {
+    let squash = SCNAction.scale(to: 0.82, duration: 0.07)
+    squash.timingMode = .easeIn
+    let recover = SCNAction.scale(to: 1.0, duration: 0.22)
+    recover.timingMode = .easeOut
+    node.runAction(.sequence([squash, recover]))
+    if perfect {
+      // Gold flash on perfect placement.
+      let flash = SCNAction.customAction(duration: 0.3) { nodeAt, progress in
+        let glow = CGFloat(1.0 - progress / 0.3)
+        nodeAt.geometry?.materials.first?.emission.contents =
+          UIColor(red: 1.0, green: 0.85, blue: 0.3, alpha: glow)
+      }
+      let clear = SCNAction.run { nodeAt in
+        nodeAt.geometry?.materials.first?.emission.contents = UIColor.black
+      }
+      node.runAction(.sequence([flash, clear]))
+    }
+  }
+
+  /// Rising sparkle ring on a perfect drop.
+  private func playPerfectSparkle(on node: SCNNode) {
+    for sparkIndex in 0..<6 {
+      let spark = SCNSphere(radius: 0.06)
+      let material = SCNMaterial()
+      material.diffuse.contents = UIColor(red: 1.0, green: 0.87, blue: 0.4, alpha: 1)
+      material.emission.contents = UIColor(red: 1.0, green: 0.85, blue: 0.3, alpha: 1)
+      spark.materials = [material]
+      let sparkNode = SCNNode(geometry: spark)
+      let angle = Float(sparkIndex) / 6 * Float.pi * 2
+      sparkNode.position = node.simdPosition + simd_float3(cos(angle) * 0.8, 0.4, sin(angle) * 0.8)
+      rootNode.addChildNode(sparkNode)
+      let up = SCNAction.move(by: SCNVector3(0, 1.2, 0), duration: 0.5)
+      up.timingMode = .easeOut
+      sparkNode.runAction(.sequence([up, .fadeOpacity(to: 0, duration: 0.2), .removeFromParentNode()]))
+    }
+  }
+
+  /// Rising sparkle ring on a perfect drop.
+  func playPerfectSparkle(on node: SCNNode) {
+    for sparkIndex in 0..<6 {
+      let spark = SCNSphere(radius: 0.06)
+      let material = SCNMaterial()
+      material.diffuse.contents = UIColor(red: 1.0, green: 0.87, blue: 0.4, alpha: 1)
+      material.emission.contents = UIColor(red: 1.0, green: 0.85, blue: 0.3, alpha: 1)
+      spark.materials = [material]
+      let sparkNode = SCNNode(geometry: spark)
+      let angle = Float(sparkIndex) / 6 * Float.pi * 2
+      sparkNode.position = node.simdPosition + simd_float3(cos(angle) * 0.8, 0.4, sin(angle) * 0.8)
+      rootNode.addChildNode(sparkNode)
+      let up = SCNAction.move(by: SCNVector3(0, 1.2, 0), duration: 0.5)
+      up.timingMode = .easeOut
+      sparkNode.runAction(.sequence([up, .fadeOpacity(to: 0, duration: 0.2), .removeFromParentNode()]))
     }
   }
 }

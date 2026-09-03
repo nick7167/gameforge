@@ -72,15 +72,29 @@ final class SkylineGameModel: ObservableObject {
 
   /// Guards against double-collapse in the same frame.
   private var collapsePending = false
+  /// Transient "PERFECT!" feedback flag (auto-clears after ~0.7 s).
+  @Published private(set) var showPerfect = false
+  @Published private(set) var comboStreak = 0
+  private var perfectClearTask: Task<Void, Never>?
 
   /// Drops the hovering district and applies GameCore rules.
   func dropPendingDistrict() {
     collapsePending = false
     guard let gridX = scene.pendingGridX else { return }
     let result = session.placeDistrict(typeID: currentTypeID, at: GridPoint(x: gridX, z: 0), tick: tick)
-    if case .placed = result {
-      scene.dropCurrentDistrict()
+    if case .placed(let perfect) = result {
+      scene.dropCurrentDistrict(perfect: perfect)
       tick += 1
+      comboStreak = perfect ? comboStreak + 1 : 0
+      if perfect {
+        showPerfect = true
+        perfectClearTask?.cancel()
+        perfectClearTask = Task { [weak self] in
+          try? await Task.sleep(nanoseconds: 700_000_000)
+          guard !Task.isCancelled else { return }
+          self?.showPerfect = false
+        }
+      }
       // Spawn the next hovering block immediately — the loop continues.
       spawnNextDistrict()
     } else {

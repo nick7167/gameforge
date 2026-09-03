@@ -45,18 +45,30 @@ struct RootView: View {
 
     var body: some View {
         switch phase {
-        case .menu:
-            StartScreen(
-                level: meta.level,
-                coins: coins,
-                onStart: { startRun() },
-                onShop: { phase = .shop }
-            )
-        case .playing:
+        case .menu: menuScreen
+        case .playing: gameplayScreen
+        case .shop: ShopScreen(purchases: purchases) { phase = .menu }
+        case .gameOver: gameOverScreen
+        }
+    }
+
+    // MARK: Screens
+
+    private var menuScreen: some View {
+        StartScreen(
+            level: meta.level,
+            coins: coins,
+            bestHeight: bestHeight,
+            onStart: { startRun() },
+            onShop: { phase = .shop }
+        )
+    }
+
+    private var gameplayScreen: some View {
+        Group {
             if let model = gameModel {
                 ZStack {
-                    // Warm sky gradient behind the 3D scene (scene bg is
-                    // transparent-capable; this guarantees contrast).
+                    // Warm sky gradient behind the 3D scene.
                     LinearGradient(
                         colors: [Color(red: 0.23, green: 0.16, blue: 0.28),
                                  Color(red: 0.85, green: 0.66, blue: 0.48),
@@ -79,6 +91,34 @@ struct RootView: View {
                         .padding(.top, 8)
                         Spacer()
                     }
+                    // PERFECT feedback: brief center flash + combo count.
+                    if model.showPerfect {
+                        VStack {
+                            Spacer()
+                            VStack(spacing: 4) {
+                                Text("PERFECT!")
+                                    .font(.title2.weight(.heavy))
+                                    .foregroundStyle(.yellow)
+                                if model.comboStreak > 1 {
+                                    Text("×\(model.comboStreak) combo")
+                                        .font(.headline)
+                                        .foregroundStyle(.white)
+                                }
+                            }
+                            .padding(20)
+                            .background(.black.opacity(0.35), in: RoundedRectangle(cornerRadius: 20))
+                            Spacer()
+                        }
+                        .allowsHitTesting(false)
+                        .transition(.scale.combined(with: .opacity))
+                    }
+                    // Danger vignette near collapse.
+                    if model.session.tower.isCritical {
+                        Color.red.opacity(0.25)
+                            .ignoresSafeArea()
+                            .allowsHitTesting(false)
+                            .transition(.opacity)
+                    }
                     if model.pendingRevive != nil {
                         ReviveOffer(model: model)
                     }
@@ -87,9 +127,11 @@ struct RootView: View {
                     model.dropPendingDistrict()
                 }
             }
-        case .shop:
-            ShopScreen(purchases: purchases) { phase = .menu }
-        case .gameOver:
+        }
+    }
+
+    private var gameOverScreen: some View {
+        Group {
             if let summary {
                 GameOverScreen(
                     summary: summary,
@@ -98,25 +140,6 @@ struct RootView: View {
                 )
             }
         }
-    }
-
-    /// Coins persist across runs via the economy of the latest session.
-    private var coins: Int {
-        gameModel?.session.economy.coins ?? 0
-    }
-
-    private func startRun() {
-        let model = SkylineGameModel(meta: meta, startingCoins: coins, ads: AdMobService())
-        model.onRunOver = { [weak model] in
-            guard let model else { return }
-            let gameCenter = GameCenterService()
-            summary = model.endRun(gameCenter: gameCenter)
-            meta = model.session.meta
-            SkylinePersistence.save(meta)
-            phase = .gameOver
-        }
-        gameModel = model
-        phase = .playing
     }
 
     /// Ends the run early (player quits) and returns to the menu.
