@@ -90,19 +90,23 @@ jobs:
           sleep 4
           xcrun simctl io "$SIM_ID" screenshot screenshots/01-menu.png
           xcrun simctl terminate "$SIM_ID" "$BUNDLE" || true
-          # Gameplay screen (launch arg skips the menu deterministically)
+          # Gameplay VIDEO — autoplay mode plays itself for ~20 seconds.
+          xcrun simctl launch "$SIM_ID" "$BUNDLE" -UITestAutoplay YES
+          sleep 2
+          xcrun simctl io "$SIM_ID" recordVideo --codec h264 --force screenshots/gameplay.mp4 &
+          VIDEO_PID=$!
+          sleep 20
+          kill -INT $VIDEO_PID 2>/dev/null || true
+          sleep 2
+          xcrun simctl io "$SIM_ID" screenshot screenshots/02-gameplay-autoplay.png
+          xcrun simctl terminate "$SIM_ID" "$BUNDLE" || true
+          # Static gameplay shot
           xcrun simctl launch "$SIM_ID" "$BUNDLE" -UITestSkipToGameplay YES
           sleep 2
-          xcrun simctl io "$SIM_ID" screenshot screenshots/02-gameplay-start.png
-          # Tap 5 times (center screen) to place blocks, capture progression
-          for i in 1 2 3 4 5; do
-            xcrun simctl io "$SIM_ID" sendtap 2>/dev/null || true
-            sleep 1
-          done
-          xcrun simctl io "$SIM_ID" screenshot screenshots/03-gameplay-after-taps.png
-          sleep 8
-          xcrun simctl io "$SIM_ID" screenshot screenshots/04-gameplay-later.png
-      - name: Upload screenshots
+          xcrun simctl io "$SIM_ID" screenshot screenshots/03-gameplay-start.png
+          xcrun simctl terminate "$SIM_ID" "$BUNDLE" || true
+          ls -la screenshots/
+      - name: Upload screenshots + video
         uses: actions/upload-artifact@v4
         if: always()
         with:

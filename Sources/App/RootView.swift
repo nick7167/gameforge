@@ -5,13 +5,18 @@ enum AppPhase: Equatable {
     case menu, playing, shop, gameOver
 }
 
-/// Launch-argument routing for UI-test screenshots in CI.
+/// Launch-argument routing for UI-test screenshots/videos in CI.
 enum UITestConfig {
     static var skipToGameplay: Bool {
         ProcessInfo.processInfo.arguments.contains("-UITestSkipToGameplay")
     }
     static var skipToShop: Bool {
         ProcessInfo.processInfo.arguments.contains("-UITestSkipToShop")
+    }
+    /// Autoplay demo: the game drops blocks by itself — used to record
+    /// real gameplay video in CI.
+    static var autoplay: Bool {
+        ProcessInfo.processInfo.arguments.contains("-UITestAutoplay")
     }
 }
 
@@ -30,12 +35,16 @@ struct RootView: View {
         purchases.configure(apiKey: apiKey) { _ in
             // Coin grants flow into the active game model's economy.
         }
-        // UI-test routing (screenshots in CI): launch args skip menus so the
-        // pipeline can capture gameplay deterministically.
-        if UITestConfig.skipToGameplay {
+        // UI-test routing (screenshots/video in CI): launch args skip menus
+        // so the pipeline can capture gameplay deterministically.
+        if UITestConfig.skipToGameplay || UITestConfig.autoplay {
             let meta = SkylinePersistence.load() ?? SkylineMeta()
             _meta = State(initialValue: meta)
-            let model = SkylineGameModel(meta: meta, startingCoins: 0, ads: NoOpAdService())
+            let model = SkylineGameModel(
+                meta: meta, startingCoins: 0,
+                ads: NoOpAdService(),
+                autoplay: UITestConfig.autoplay
+            )
             _gameModel = State(initialValue: model)
             _phase = State(initialValue: .playing)
         } else if UITestConfig.skipToShop {
@@ -76,9 +85,11 @@ struct RootView: View {
                         startPoint: .top, endPoint: .bottom
                     )
                     .ignoresSafeArea()
-                    TowerSceneView(scene: model.scene, onFrame: {
-                        model.frameUpdate()
-                    })
+                    TowerSceneView(
+                        scene: model.scene,
+                        onFrame: { model.frameUpdate() },
+                        onTap: { model.dropPendingDistrict() }
+                    )
                     .ignoresSafeArea()
                     VStack {
                         GameHUD(
@@ -91,26 +102,33 @@ struct RootView: View {
                         .padding(.top, 8)
                         Spacer()
                     }
-                    // PERFECT feedback: brief center flash + combo count.
+                    // PERFECT feedback: springy star banner + combo.
                     if model.showPerfect {
                         VStack {
                             Spacer()
-                            VStack(spacing: 4) {
-                                Text("PERFECT!")
-                                    .font(.title2.weight(.heavy))
+                            VStack(spacing: 6) {
+                                Label("PERFECT!", systemImage: "star.fill")
+                                    .font(.system(size: 28, weight: .heavy, design: .rounded))
                                     .foregroundStyle(.yellow)
                                 if model.comboStreak > 1 {
-                                    Text("×\(model.comboStreak) combo")
-                                        .font(.headline)
-                                        .foregroundStyle(.white)
+                                    Text("\(model.comboStreak)× COMBO")
+                                        .font(.system(size: 20, weight: .black, design: .rounded))
+                                        .foregroundStyle(.orange)
                                 }
                             }
-                            .padding(20)
-                            .background(.black.opacity(0.35), in: RoundedRectangle(cornerRadius: 20))
-                            Spacer()
+                            .padding(.horizontal, 32)
+                            .padding(.vertical, 18)
+                            .background(
+                                RoundedRectangle(cornerRadius: 28)
+                                    .fill(.black.opacity(0.55))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 28)
+                                            .stroke(.yellow.opacity(0.6), lineWidth: 2)
+                                    )
+                            )
+                            .transition(.scale(scale: 0.5).combined(with: .opacity))
                         }
                         .allowsHitTesting(false)
-                        .transition(.scale.combined(with: .opacity))
                     }
                     // Danger vignette near collapse.
                     if model.session.tower.isCritical {
@@ -122,9 +140,6 @@ struct RootView: View {
                     if model.pendingRevive != nil {
                         ReviveOffer(model: model)
                     }
-                }
-                .onTapGesture {
-                    model.dropPendingDistrict()
                 }
             }
         }

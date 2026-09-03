@@ -71,9 +71,10 @@ final class TowerScene: SCNScene {
     sun.light?.color = UIColor(red: 1.0, green: 0.92, blue: 0.80, alpha: 1)
     sun.light?.castsShadow = true
     sun.light?.shadowMode = .deferred
-    sun.light?.shadowSampleCount = 16
-    sun.light?.shadowRadius = 6
-    sun.light?.shadowColor = UIColor(red: 0.15, green: 0.10, blue: 0.18, alpha: 0.55)
+    // Tuned for 60 fps on device: 16-sample shadows cost real frame time.
+    sun.light?.shadowSampleCount = 8
+    sun.light?.shadowRadius = 4
+    sun.light?.shadowColor = UIColor(red: 0.15, green: 0.10, blue: 0.18, alpha: 0.5)
     sun.eulerAngles = SCNVector3(-Float.pi / 3.2, Float.pi / 5, 0)
     rootNode.addChildNode(sun)
 

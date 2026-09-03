@@ -15,6 +15,9 @@ final class SkylineGameModel: ObservableObject {
   /// The scene is owned here; RootView embeds it via TowerSceneView.
   let scene: TowerScene
   private let ads: RewardedAdService
+  /// Autoplay demo mode: drops blocks automatically for CI gameplay video.
+  private let autoplay: Bool
+  private var lastAutoDropTick: UInt64 = 0
   private var wind: WindSystem
   private var nextGustTick: UInt64 = 0
   private var currentGust: WindSystem.Gust?
@@ -23,8 +26,9 @@ final class SkylineGameModel: ObservableObject {
 
   var onRunOver: (() -> Void)?
 
-  init(meta: SkylineMeta, startingCoins: Int, ads: RewardedAdService, windSeed: UInt64 = 42) {
+  init(meta: SkylineMeta, startingCoins: Int, ads: RewardedAdService, windSeed: UInt64 = 42, autoplay: Bool = false) {
     self.ads = ads
+    self.autoplay = autoplay
     self.scene = TowerScene()
     self.wind = WindSystem(seed: windSeed)
     session = SkylineSession(meta: meta, startingCoins: startingCoins)
@@ -57,12 +61,20 @@ final class SkylineGameModel: ObservableObject {
   /// physics-feedback checks, and the wind clock. This is the game's pulse —
   /// without it nothing moves (the v24 "nothing happens" bug).
   func frameUpdate() {
-    // Camera follows at most once per 30 frames — running an SCNAction
-    // every frame piled up animations and froze the camera (v25 bug).
-    if tick % 30 == 0 {
-      scene.followTowerTop(height: Float(session.tower.districts.count))
+    // Camera reframes at most every 10 frames (~6×/sec) — frequent enough
+    // to keep the block in frame, cheap enough to stay smooth.
+    if tick % 10 == 0 {
+      scene.followTowerTop(height: Float(session.tower.districts.count) + 2)
     }
     advanceTick()
+    // Autoplay demo: drop when the block nears the slide edge, min ~1.2 s
+    // between drops so the video looks like deliberate play.
+    if autoplay, !runOver, pendingRevive == nil,
+       let gridX = scene.pendingGridX,
+       abs(gridX) >= 2, tick - lastAutoDropTick > 70 {
+      lastAutoDropTick = tick
+      dropPendingDistrict()
+    }
     // Death by instability: lean at ceiling → structural collapse.
     if !runOver, session.tower.lean >= 0.92, !collapsePending {
       collapsePending = true
