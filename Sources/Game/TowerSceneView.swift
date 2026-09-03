@@ -31,7 +31,8 @@ struct TowerSceneView: UIViewRepresentable {
   }
 
   final class Coordinator: NSObject, SCNSceneRendererDelegate {
-    var onFrame: (() -> Void)?
+    // Main-actor isolated: the renderer callback hops to main before use.
+    @MainActor var onFrame: (() -> Void)?
 
     init(onFrame: (() -> Void)?) {
       self.onFrame = onFrame
@@ -39,9 +40,11 @@ struct TowerSceneView: UIViewRepresentable {
 
     // The renderer callback fires on a render thread; hop to the main actor
     // before touching game state (Swift 6 isolation).
-    func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
+    nonisolated func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
       DispatchQueue.main.async { [weak self] in
-        self?.onFrame?()
+        MainActor.assumeIsolated {
+          self?.onFrame?()
+        }
       }
     }
   }
