@@ -56,3 +56,55 @@ jobs:
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
             test | tail -30
+
+  app-screenshots:
+    name: App screenshots (visual check)
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        run: xcodegen generate
+      - name: Boot simulator
+        run: |
+          SIM_ID=$(xcrun simctl list devices available | grep -oE '[A-F0-9-]{36}' | head -1)
+          echo "SIM_ID=$SIM_ID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$SIM_ID" || true
+          xcrun simctl bootstatus "$SIM_ID" -b
+      - name: Build app for simulator
+        run: |
+          xcodebuild \
+            -project GameForge.xcodeproj -scheme GameForge \
+            -destination "id=$SIM_ID" -configuration Debug \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO build | tail -5
+      - name: Capture screenshots (menu + gameplay)
+        run: |
+          APP=build/DerivedData/Build/Products/Debug-iphonesimulator/GameForge.app
+          BUNDLE=dev.adrez.gameforge
+          mkdir -p screenshots
+          # Menu screen
+          xcrun simctl install "$SIM_ID" "$APP"
+          xcrun simctl launch "$SIM_ID" "$BUNDLE"
+          sleep 4
+          xcrun simctl io "$SIM_ID" screenshot screenshots/01-menu.png
+          xcrun simctl terminate "$SIM_ID" "$BUNDLE" || true
+          # Gameplay screen (launch arg skips the menu deterministically)
+          xcrun simctl launch "$SIM_ID" "$BUNDLE" -UITestSkipToGameplay YES
+          sleep 2
+          xcrun simctl io "$SIM_ID" screenshot screenshots/02-gameplay-start.png
+          # Tap 5 times (center screen) to place blocks, capture progression
+          for i in 1 2 3 4 5; do
+            xcrun simctl io "$SIM_ID" sendtap 2>/dev/null || true
+            sleep 1
+          done
+          xcrun simctl io "$SIM_ID" screenshot screenshots/03-gameplay-after-taps.png
+          sleep 8
+          xcrun simctl io "$SIM_ID" screenshot screenshots/04-gameplay-later.png
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: app-screenshots
+          path: screenshots/
