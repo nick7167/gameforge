@@ -77,10 +77,10 @@ struct RootView: View {
         // CRITICAL: the gameplay view must OWN the model via @ObservedObject
         // (RootView's @State does NOT subscribe to ObservableObject changes —
         // that's why the HUD froze at 0m/0 coins while the tower grew).
-        if let model = gameModel {
-            GameplayView(model: model, onQuit: { endRunAndExit() })
-        } else {
-            EmptyView()
+        Group {
+            if let model = gameModel {
+                GameplayView(model: model, onQuit: { endRunAndExit() })
+            }
         }
     }
 
