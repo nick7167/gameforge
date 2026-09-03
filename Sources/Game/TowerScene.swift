@@ -330,7 +330,7 @@ extension TowerScene {
       spark.materials = [material]
       let sparkNode = SCNNode(geometry: spark)
       let angle = Float(sparkIndex) / 6 * Float.pi * 2
-      sparkNode.position = node.simdPosition + simd_float3(cos(angle) * 0.8, 0.4, sin(angle) * 0.8)
+      sparkNode.simdPosition = node.simdPosition + simd_float3(cos(angle) * 0.8, 0.4, sin(angle) * 0.8)
       rootNode.addChildNode(sparkNode)
       let up = SCNAction.move(by: SCNVector3(0, 1.2, 0), duration: 0.5)
       up.timingMode = .easeOut
