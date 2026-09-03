@@ -44,7 +44,7 @@ final class SkylineGameModel: ObservableObject {
   var currentTypeID: String {
     // Cycle through unlocked types for variety instead of always "homes".
     let unlocked = UnlockLadder.unlockedTypes(level: session.meta.level)
-    return unlocked[placements % unlocked.count].id
+    return unlocked[session.placements % unlocked.count].id
   }
 
   private func spawnNextDistrict() {

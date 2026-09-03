@@ -119,6 +119,17 @@ final class TowerScene: SCNScene {
 
   private var cameraRig: SCNNode?
 
+  /// Keeps the tower top framed as the tower grows.
+  func followTowerTop(height: Float) {
+    guard let camera = cameraRig else { return }
+    let targetY = max(7.0, height * 0.6 + 4.0)
+    let lookY = max(1.5, height * 0.55)
+    let action = SCNAction.move(to: SCNVector3(11, targetY, 11), duration: 0.4)
+    action.timingMode = .easeInEaseOut
+    camera.runAction(action)
+    camera.look(at: SCNVector3(0, lookY, 0))
+  }
+
   // MARK: Placement
 
   private var placedCount: Int {
