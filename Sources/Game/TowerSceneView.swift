@@ -23,23 +23,29 @@ struct TowerSceneView: UIViewRepresentable {
   }
 
   func makeCoordinator() -> Coordinator {
-    Coordinator(onFrame: onFrame)
+    MainActor.assumeIsolated {
+      Coordinator(onFrame: onFrame)
+    }
   }
 
   func updateUIView(_ uiView: SCNView, context: Context) {
-    context.coordinator.onFrame = onFrame
+    MainActor.assumeIsolated {
+      context.coordinator.onFrame = onFrame
+    }
   }
 
+  /// Main-actor isolated coordinator: the render loop is UI-adjacent, so all
+  /// state lives on the main actor and Swift 6 isolation is satisfied.
+  @MainActor
   final class Coordinator: NSObject, SCNSceneRendererDelegate {
-    // Main-actor isolated: the renderer callback hops to main before use.
-    @MainActor var onFrame: (() -> Void)?
+    var onFrame: (() -> Void)?
 
     init(onFrame: (() -> Void)?) {
       self.onFrame = onFrame
     }
 
     // The renderer callback fires on a render thread; hop to the main actor
-    // before touching game state (Swift 6 isolation).
+    // before touching game state.
     nonisolated func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
       Task { @MainActor [weak self] in
         self?.onFrame?()
