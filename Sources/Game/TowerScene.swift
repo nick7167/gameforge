@@ -130,7 +130,7 @@ final class TowerScene: SCNScene {
     let current = camera.simdPosition
     let target = simd_float3(11, targetY, 11)
     camera.simdPosition = current + (target - current) * 0.08
-    camera.look(at: SCNVector3(0, lookY, 0), up: SCNVector3(0, 1, 0), localUp: SCNVector3(0, 1, 0))
+    camera.look(at: SCNVector3(0, lookY, 0), up: SCNVector3(0, 1, 0), localFront: SCNVector3(0, 0, 1))
   }
 
   // MARK: Placement
