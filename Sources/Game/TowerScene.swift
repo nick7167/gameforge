@@ -111,7 +111,11 @@ final class TowerScene: SCNScene {
     cameraNode.camera = SCNCamera()
     cameraNode.camera?.fieldOfView = 45
     cameraNode.camera?.bloomIntensity = 0.25
+    cameraNode.camera?.zFar = 250
     cameraNode.position = SCNVector3(11, 7, 11)
+    // Cameras look down their local -Z. look(at:) with the default front
+    // vector orients correctly; passing localFront (0,0,1) flips it 180°
+    // away from the tower (the empty-gameplay-screen bug).
     cameraNode.look(at: SCNVector3(0, 1.5, 0))
     rootNode.addChildNode(cameraNode)
     cameraRig = cameraNode
@@ -130,7 +134,8 @@ final class TowerScene: SCNScene {
     let current = camera.simdPosition
     let target = simd_float3(11, targetY, 11)
     camera.simdPosition = current + (target - current) * 0.08
-    camera.look(at: SCNVector3(0, lookY, 0), up: SCNVector3(0, 1, 0), localFront: SCNVector3(0, 0, 1))
+    // Default front vector — correct for cameras (they look down -Z).
+    camera.look(at: SCNVector3(0, lookY, 0))
   }
 
   // MARK: Placement

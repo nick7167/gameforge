@@ -12,6 +12,9 @@ struct TowerSceneView: UIViewRepresentable {
     let view = SCNView()
     view.scene = scene
     view.backgroundColor = .clear
+    // Required for the SwiftUI gradient behind to show through — an opaque
+    // SCNView with a clear color renders BLACK, hiding the 3D content.
+    view.isOpaque = false
     view.antialiasingMode = .multisampling2X
     view.preferredFramesPerSecond = 60
     view.isJitteringEnabled = true
