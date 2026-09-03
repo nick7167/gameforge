@@ -104,8 +104,9 @@ public struct BattleEngine: Sendable {
     guard outcome == .ongoing else { return }
     elapsed += dt
 
-    // Boss phase transition at 50% HP
-    if isBoss && phase == 1, let boss = enemies.first, boss.hp <= boss.maxHP * 0.5 {
+    // Boss phase transition at 50% HP (target the actual boss unit, fallback to first enemy)
+    let boss = enemies.first(where: { $0.isBoss }) ?? enemies.first
+    if isBoss && phase == 1, let boss, boss.hp <= boss.maxHP * 0.5 {
       phase = 2
     }
 
@@ -145,8 +146,9 @@ public struct BattleEngine: Sendable {
 
   private mutating func performAttack(attacker: inout Unit, targets: inout [Unit]) {
     guard let targetIndex = targets.firstIndex(where: { $0.isAlive }) else { return }
-    let isEnraged = isBoss && phase == 2
-    let enrage = isEnraged ? 1.0 + min((elapsed - 45.0) * 0.01, 0.5) : 1.0
+    // Enrage buffs only enemy attackers in boss phase 2; ramp clamped to [0, 0.5].
+    let isEnraged = attacker.isEnemy && isBoss && phase == 2
+    let enrage = isEnraged ? 1.0 + max(0.0, min((elapsed - 45.0) * 0.01, 0.5)) : 1.0
     let rawDamage = attacker.stats.attack * (1.0 + attacker.buffAttackPercent) * enrage
     let mitigated = max(rawDamage * 0.25, rawDamage - targets[targetIndex].stats.defense * 0.6)
     let crit = Double.random(in: 0..<1.0, using: &rng) < attacker.stats.critChance
@@ -232,7 +234,9 @@ public struct BattleEngine: Sendable {
     guard let tIndex = enemies.firstIndex(where: { $0.isAlive }) else { return nil }
     let raw = heroes[heroIndex].stats.attack * multiplier
     let mitigated = max(raw * 0.5, raw - enemies[tIndex].stats.defense * 0.6)
-    enemies[tIndex].hp = max(0, enemies[tIndex].hp - mitigated)
-    return UltFireResult(heroID: heroes[heroIndex].id, damage: mitigated, crit: false, targetID: enemies[tIndex].id)
+    let crit = Double.random(in: 0..<1.0, using: &rng) < heroes[heroIndex].stats.critChance
+    let damage = mitigated * (crit ? heroes[heroIndex].stats.critDamage : 1.0)
+    enemies[tIndex].hp = max(0, enemies[tIndex].hp - damage)
+    return UltFireResult(heroID: heroes[heroIndex].id, damage: damage, crit: crit, targetID: enemies[tIndex].id)
   }
 }

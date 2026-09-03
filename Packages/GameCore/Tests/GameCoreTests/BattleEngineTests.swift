@@ -30,11 +30,18 @@ import Testing
       config: BattleConfig(enemyStats: StatBlock(hp: 5000, attack: 40, defense: 20, speed: 1.0), enemyCount: 2, isBoss: false, stagePower: 1.0),
       seed: 2
     )
-    // Fast-forward until an ult is charged
+    // Fast-forward until a damage-dealing ult is charged
+    func isDamageUlt(_ effect: UltimateEffect) -> Bool {
+      switch effect {
+      case .damage, .chainDamage, .execute, .lifesteal: return true
+      case .healAll, .shieldAll, .stunAll, .buffAttack, .freezeAll: return false
+      }
+    }
     var heroID: String?
     for _ in 0..<600 where heroID == nil {
       battle.tick(0.1)
-      heroID = battle.heroes.first(where: { $0.ultCharge >= 1.0 })?.id
+      heroID = battle.heroes
+        .first(where: { $0.ultCharge >= 1.0 && isDamageUlt($0.def.ultimate.effect) })?.id
     }
     #expect(heroID != nil)
     let before = battle.enemies.reduce(0) { $0 + $1.hp }
