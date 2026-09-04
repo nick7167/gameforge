@@ -83,6 +83,14 @@ public struct GachaEngine: Sendable {
     return results
   }
 
+  /// Cost-free pull: identical to `pull` minus shard handling. Used by the
+  /// session facade, which pays the gem cost from the wallet up front.
+  public mutating func pullFree(
+    banner: BannerKind, ownedHeroIDs: Set<String>, rng: inout SeededGenerator
+  ) -> PullResult {
+    pullRaw(banner: banner, ownedHeroIDs: ownedHeroIDs, rng: &rng, minimumRarity: nil)
+  }
+
   /// Shared pull logic (no cost handling). Pity counters increment before the roll;
   /// a Legendary grant resets both counters, an Epic grant resets the Epic counter only.
   mutating func pullRaw(

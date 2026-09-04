@@ -42,7 +42,7 @@ public struct GearItem: Sendable, Identifiable, Codable {
 }
 
 /// Gear generation and progression (spec §7). Enhancing never destroys gear.
-public struct EquipmentSystem: Sendable {
+public struct EquipmentSystem: Sendable, Codable {
   public static let rerollGemCost = 50
 
   public init() {}

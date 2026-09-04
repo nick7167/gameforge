@@ -51,7 +51,7 @@ public struct QuestProgress: Sendable, Codable {
 
 /// Quests & achievements (spec §9). Dailies, weeklies and achievements all
 /// track the same metrics; reset semantics live in the app layer (Plan 2).
-public struct QuestSystem: Sendable {
+public struct QuestSystem: Sendable, Codable {
   public static let dailies: [QuestDefinition] = [
     QuestDefinition(id: "d-battles", kind: .daily, metric: .battlesWon, goal: 5, rewardGems: 20, rewardQuestTokens: 10),
     QuestDefinition(id: "d-summon", kind: .daily, metric: .summons, goal: 1, rewardGems: 20, rewardQuestTokens: 10),
