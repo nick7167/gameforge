@@ -84,11 +84,13 @@ public struct GachaEngine: Sendable {
   }
 
   /// Cost-free pull: identical to `pull` minus shard handling. Used by the
-  /// session facade, which pays the gem cost from the wallet up front.
+  /// session facade, which pays the gem cost from the wallet up front. Pass
+  /// `minimumRarity` to force a rarity floor (10×-pull guarantee on the last pull).
   public mutating func pullFree(
-    banner: BannerKind, ownedHeroIDs: Set<String>, rng: inout SeededGenerator
+    banner: BannerKind, ownedHeroIDs: Set<String>, rng: inout SeededGenerator,
+    minimumRarity: Rarity? = nil
   ) -> PullResult {
-    pullRaw(banner: banner, ownedHeroIDs: ownedHeroIDs, rng: &rng, minimumRarity: nil)
+    pullRaw(banner: banner, ownedHeroIDs: ownedHeroIDs, rng: &rng, minimumRarity: minimumRarity)
   }
 
   /// Shared pull logic (no cost handling). Pity counters increment before the roll;

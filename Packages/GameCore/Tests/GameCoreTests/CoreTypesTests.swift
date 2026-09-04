@@ -19,6 +19,15 @@ import Testing
     #expect(sum.hp == 150 && sum.attack == 15 && sum.critDamage == 2.0) // 1.5 + 0.5
   }
 
+  @Test func statBlockZeroIsAdditiveIdentity() {
+    let a = StatBlock(hp: 100, attack: 10, defense: 5, speed: 1, critChance: 0.05, critDamage: 1.5)
+    let sum = a + StatBlock.zero
+    #expect(sum.hp == a.hp && sum.attack == a.attack && sum.defense == a.defense && sum.speed == a.speed)
+    #expect(sum.critChance == a.critChance && sum.critDamage == a.critDamage)
+    // zero itself carries no hidden defaults.
+    #expect(StatBlock.zero.critChance == 0 && StatBlock.zero.critDamage == 0)
+  }
+
   @Test func walletSpendFailsWhenInsufficient() {
     var wallet = Wallet()
     wallet.add(.gold, 100)

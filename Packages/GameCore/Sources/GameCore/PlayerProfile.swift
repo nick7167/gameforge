@@ -32,14 +32,16 @@ public struct OwnedHero: Sendable, Codable, Identifiable {
     return stats
   }
 
-  /// Gear stat block with crit fields zeroed (ruling 9): `EquipmentSystem.stats(for:)`
-  /// returns StatBlock defaults for critChance/critDamage; subtract them so gear
-  /// only contributes what its main/sub stats actually say.
+  /// Gear contributions are already zero-based crit-wise:
+  /// `EquipmentSystem.stats(for:)` returns a StatBlock with zeroed crit fields,
+  /// so gear only contributes what its main/sub stats actually say.
   private static func gearStats(_ item: GearItem) -> StatBlock {
-    var block = EquipmentSystem.stats(for: item)
-    block.critChance -= StatBlock.zero.critChance
-    block.critDamage -= StatBlock.zero.critDamage
-    return block
+    EquipmentSystem.stats(for: item)
+  }
+
+  /// Direct gear mutation for the session layer (equipping, enhancing).
+  public mutating func setGear(_ item: GearItem, slot: GearSlot) {
+    gear[slot] = item
   }
 }
 
@@ -56,6 +58,10 @@ public struct PlayerProfile: Sendable, Codable {
   public var equipment: EquipmentSystem
   public var totalBattles: Int
   public var totalSummons: Int
+  /// All gear ever dropped (spec §7). Equipped copies live on `OwnedHero.gear`.
+  public private(set) var gearInventory: [GearItem] = []
+  /// Last idle-income claim timestamp, so offline income survives relaunch.
+  public var lastIdleClaim: Date?
 
   public init(
     name: String, accountLevel: Int, wallet: Wallet, ownedHeroes: [OwnedHero], squad: [String],
@@ -73,6 +79,30 @@ public struct PlayerProfile: Sendable, Codable {
     self.equipment = equipment
     self.totalBattles = totalBattles
     self.totalSummons = totalSummons
+  }
+
+  /// Decoding support: profiles persisted before gear inventory / idle tracking
+  /// existed decode with empty inventory and no last-claim timestamp.
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    name = try container.decode(String.self, forKey: .name)
+    accountLevel = try container.decode(Int.self, forKey: .accountLevel)
+    wallet = try container.decode(Wallet.self, forKey: .wallet)
+    ownedHeroes = try container.decode([OwnedHero].self, forKey: .ownedHeroes)
+    squad = try container.decode([String].self, forKey: .squad)
+    bestStage = try container.decode(StageID.self, forKey: .bestStage)
+    gacha = try container.decode(GachaState.self, forKey: .gacha)
+    quests = try container.decode(QuestSystem.self, forKey: .quests)
+    equipment = try container.decode(EquipmentSystem.self, forKey: .equipment)
+    totalBattles = try container.decode(Int.self, forKey: .totalBattles)
+    totalSummons = try container.decode(Int.self, forKey: .totalSummons)
+    gearInventory = try container.decodeIfPresent([GearItem].self, forKey: .gearInventory) ?? []
+    lastIdleClaim = try container.decodeIfPresent(Date.self, forKey: .lastIdleClaim)
+  }
+
+  /// Append gear drops to the inventory (called by the session on battle loot).
+  public mutating func addToGearInventory(_ items: [GearItem]) {
+    gearInventory.append(contentsOf: items)
   }
 
   /// Fresh profile: starter squad (one hero per faction + one extra DPS),

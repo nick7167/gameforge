@@ -1,0 +1,35 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "gamecore-tests",
+      "type": "shell",
+      "command": "export PATH=/opt/swift/usr/bin:$PATH && cd /workspaces/gameforge/Packages/GameCore && swift test 2>&1 | tail -60",
+      "group": "test"
+    },
+    {
+      "label": "swiftlint",
+      "type": "shell",
+      "command": "export PATH=/opt/swift/usr/bin:$PATH && export LD_LIBRARY_PATH=/opt/swift/usr/lib/swift/linux:$LD_LIBRARY_PATH && cd /workspaces/gameforge && swiftlint --config .swiftlint.yml 2>&1 | tail -10",
+      "group": "test"
+    },
+    {
+      "label": "git-amend",
+      "type": "shell",
+      "command": "cd /workspaces/gameforge && git add -A && git commit --amend --no-edit && git status --porcelain=v1 && echo CLEAN && git show --stat HEAD | head -20",
+      "group": "test"
+    },
+    {
+      "label": "git-inspect",
+      "type": "shell",
+      "command": "cd /workspaces/gameforge && git log --oneline -8 && echo '---' && git status --porcelain=v1 && echo '---' && git show --stat HEAD | head -30",
+      "group": "test"
+    },
+    {
+      "label": "commit-review-fixes",
+      "type": "shell",
+      "command": "cd /workspaces/gameforge && git add -A && git commit -m 'Address Task 10 review: 10x guarantee, gear inventory, encapsulation, idle persistence' && git log --oneline -1",
+      "group": "build"
+    }
+  ]
+}

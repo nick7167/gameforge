@@ -67,8 +67,9 @@ public struct EquipmentSystem: Sendable, Codable {
   }
 
   /// Total stat contribution of a gear item (main + sub + enhance bonus).
+  /// Crit fields are zero-based here: gear only contributes what its stats say.
   public static func stats(for item: GearItem) -> StatBlock {
-    var block = StatBlock()
+    var block = StatBlock(hp: 0, attack: 0, defense: 0, speed: 0, critChance: 0, critDamage: 0)
     applyStat(item.mainStat, to: &block, multiplier: 1.0 + Double(item.enhanceLevel) * 0.08)
     for sub in item.subStats {
       applyStat(sub, to: &block, multiplier: 1.0)
@@ -80,21 +81,24 @@ public struct EquipmentSystem: Sendable, Codable {
     return block
   }
 
-  /// Set bonuses (spec §7): 2-piece minor, 4-piece major.
+  /// Set bonuses (spec §7): 2-piece minor, 4-piece major. Built from `.zero` so
+  /// StatBlock's non-zero defaults (crit) never leak into a set bonus.
   public static func setBonus(setName: String, pieceCount: Int) -> StatBlock? {
     guard pieceCount >= 2 else { return nil }
+    var bonus = StatBlock.zero
     switch setName {
     case "emberfang":
-      return pieceCount >= 4 ? StatBlock(attack: 0, critDamage: 0.25) : StatBlock(critChance: 0.05)
+      if pieceCount >= 4 { bonus.critDamage = 0.25 } else { bonus.critChance = 0.05 }
     case "glacier":
-      return pieceCount >= 4 ? StatBlock(hp: 0, defense: 40) : StatBlock(hp: 300)
+      if pieceCount >= 4 { bonus.defense = 40 } else { bonus.hp = 300 }
     case "grove":
-      return pieceCount >= 4 ? StatBlock(hp: 0, speed: 0.15) : StatBlock(defense: 25)
+      if pieceCount >= 4 { bonus.speed = 0.15 } else { bonus.defense = 25 }
     case "voidshroud":
-      return pieceCount >= 4 ? StatBlock(attack: 0, critDamage: 0.35) : StatBlock(attack: 20)
+      if pieceCount >= 4 { bonus.critDamage = 0.35 } else { bonus.attack = 20 }
     default:
       return nil
     }
+    return bonus
   }
 
   @discardableResult

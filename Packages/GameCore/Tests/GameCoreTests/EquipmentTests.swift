@@ -111,8 +111,9 @@ import Testing
     let block = EquipmentSystem.stats(for: item)
     // Main stat: 100 * (1 + 5*0.08) + 100 * (5/5 * 0.10) = 140 + 10 = 150
     #expect(abs(block.attack - 150.0) < 0.001)
-    // StatBlock() defaults critChance to 0.05; sub-stat adds 0.10
-    #expect(abs(block.critChance - 0.15) < 0.001)
+    // Gear blocks are built from zeroed crit fields: only the sub-stat shows up.
+    #expect(abs(block.critChance - 0.10) < 0.001)
+    #expect(block.critDamage == 0)
   }
 
   @Test func generateDropIsDeterministicForSameSeed() {

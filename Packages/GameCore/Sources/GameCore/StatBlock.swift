@@ -19,7 +19,8 @@ public struct StatBlock: Sendable, Codable, AdditiveArithmetic {
     self.critDamage = critDamage
   }
 
-  public static var zero: StatBlock { StatBlock() }
+  /// True additive identity: adding/subtracting `zero` never changes a block.
+  public static var zero: StatBlock { StatBlock(hp: 0, attack: 0, defense: 0, speed: 0, critChance: 0, critDamage: 0) }
 
   public static func + (lhs: StatBlock, rhs: StatBlock) -> StatBlock {
     StatBlock(

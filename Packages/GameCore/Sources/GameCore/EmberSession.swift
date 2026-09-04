@@ -17,9 +17,8 @@ public struct BattleReward: Sendable {
 /// The game facade (spec §14). The app layer drives this and renders its state;
 /// all rules live in GameCore types.
 public struct EmberSession: Sendable {
-  public var profile: PlayerProfile
+  public private(set) var profile: PlayerProfile
   public private(set) var battle: BattleEngine?
-  public private(set) var lastIdleClaim: Date?
 
   /// Seed for battle RNG and drop rolls. Injected so tests stay deterministic;
   /// the app layer passes a time-based seed.
@@ -30,6 +29,16 @@ public struct EmberSession: Sendable {
     self.rngSeed = rngSeed
   }
 
+  /// Internal test-fixture entry point: builds a session and lets the caller
+  /// shape the profile directly. App code cannot reach this (internal only);
+  /// tests use `@testable import GameCore`.
+  init(profile: PlayerProfile, rngSeed: UInt64, configure: (inout PlayerProfile) -> Void) {
+    var configured = profile
+    configure(&configured)
+    self.profile = configured
+    self.rngSeed = rngSeed
+  }
+
   /// The stage the player is currently attempting (best cleared + 1).
   public var currentStage: StageID {
     StageProgression.next(after: profile.bestStage)
@@ -37,9 +46,12 @@ public struct EmberSession: Sendable {
 
   // MARK: - Battle
 
-  /// Start a battle at the current stage with the squad in squad order.
+  /// Start a battle at the current stage with the squad in squad order. A
+  /// no-op when a battle is already in progress (an ongoing fight is never
+  /// silently discarded).
   @discardableResult
-  public mutating func startBattle() -> BattleEngine {
+  public mutating func startBattle() -> BattleEngine? {
+    guard battle == nil || battle?.outcome != .ongoing else { return battle }
     let stage = currentStage
     let squadDefs = profile.squad.compactMap { id in
       profile.ownedHeroes.first { $0.definitionID == id }.map { battleDefinition(for: $0) }
@@ -62,6 +74,7 @@ public struct EmberSession: Sendable {
   /// Catalog definition with baseStats overridden by the owned hero's computed stats.
   private func battleDefinition(for hero: OwnedHero) -> HeroDefinition {
     guard let def = HeroCatalog.hero(id: hero.definitionID) else {
+      assertionFailure("Unknown hero id \(hero.definitionID) in catalog")
       return HeroDefinition(
         id: hero.definitionID, name: hero.definitionID, faction: .ember, rarity: .common,
         role: .dps, baseStats: hero.stats(),
@@ -88,6 +101,10 @@ public struct EmberSession: Sendable {
   public mutating func finishBattle() -> BattleReward? {
     guard let battle, battle.outcome != .ongoing else { return nil }
     defer { self.battle = nil }
+
+    // Any finished battle counts, win or lose.
+    profile.totalBattles += 1
+
     guard battle.outcome == .victory else { return nil }
 
     let stage = currentStage
@@ -106,10 +123,10 @@ public struct EmberSession: Sendable {
       }
       drops.append(profile.equipment.generateDrop(rarity: rarity, rng: &rng))
     }
+    profile.addToGearInventory(drops)
 
     profile.quests.record(metric: .battlesWon, amount: 1)
     profile.quests.record(metric: .stagesCleared, amount: 1)
-    profile.totalBattles += 1
     profile.bestStage = stage
     return BattleReward(gold: gold, gearDrops: drops, stageCleared: stage)
   }
@@ -117,12 +134,13 @@ public struct EmberSession: Sendable {
   // MARK: - Summons
 
   /// Summon heroes. Pays gems from the wallet (10× uses the discounted multi
-  /// cost), then pulls cost-free. Dupe faction shards are paid out as gems
-  /// (1 gem per shard — v1 simplification, ledgered here).
+  /// cost), then pulls cost-free. On a 10× summon the last pull is upgraded to
+  /// Rare+ when the first nine produced nothing better than Common (guarantee).
   @discardableResult
   public mutating func summon(
     banner: GachaEngine.BannerKind, count: Int
   ) -> [GachaEngine.PullResult]? {
+    guard (1...10).contains(count) else { return nil }
     let cost = count == 10 ? GachaEngine.multiCost : GachaEngine.singleCost * count
     guard profile.wallet.spend(.gems, cost) else { return nil }
 
@@ -130,12 +148,14 @@ public struct EmberSession: Sendable {
     var owned = Set(profile.ownedHeroes.map(\.definitionID))
     var rng = SeededGenerator(seed: rngSeed &+ UInt64(profile.totalSummons))
     var results: [GachaEngine.PullResult] = []
-    for _ in 0..<count {
-      let result = engine.pullFree(banner: banner, ownedHeroIDs: owned, rng: &rng)
+    for index in 0..<count {
+      let needsGuarantee =
+        index == count - 1 && count == 10
+        && !results.contains { $0.hero.rarity >= .rare }
+      let result = engine.pullFree(
+        banner: banner, ownedHeroIDs: owned, rng: &rng, minimumRarity: needsGuarantee ? .rare : nil)
       owned.insert(result.hero.id)
-      if !result.isNew {
-        profile.wallet.add(.gems, result.factionShardsAwarded)
-      }
+      // Ruling: faction shards from dupes deferred to Plan 2 persistence pass.
       results.append(result)
     }
     profile.gacha = engine.state
@@ -146,12 +166,14 @@ public struct EmberSession: Sendable {
 
   // MARK: - Hero progression
 
-  /// Level up a hero with gold. Cost: 800 × current level.
+  /// Level up a hero with gold. Cost: 800 × current level. Level is capped at
+  /// 10× account level (XP potions deferred to Plan 2).
   @discardableResult
   public mutating func levelUpHero(heroID: String) -> Bool {
     guard let index = profile.ownedHeroes.firstIndex(where: { $0.definitionID == heroID }) else {
       return false
     }
+    guard profile.ownedHeroes[index].level < profile.accountLevel * 10 else { return false }
     let cost = Self.heroLevelCost(level: profile.ownedHeroes[index].level)
     guard profile.wallet.spend(.gold, cost) else { return false }
     profile.ownedHeroes[index].level += 1
@@ -162,31 +184,57 @@ public struct EmberSession: Sendable {
   public static func heroLevelCost(level: Int) -> Int { 800 * level }
 
   /// Equip a gear item into a hero's slot (replaces whatever was there).
-  public mutating func equipGear(heroID: String, item: GearItem, slot: GearSlot) {
+  /// Fails on unknown heroes or a slot/item mismatch.
+  @discardableResult
+  public mutating func equipGear(heroID: String, item: GearItem, slot: GearSlot) -> Bool {
+    guard profile.ownedHeroes.contains(where: { $0.definitionID == heroID }) else { return false }
+    guard item.slot == slot else { return false }
     guard let index = profile.ownedHeroes.firstIndex(where: { $0.definitionID == heroID }) else {
-      return
+      return false
     }
     profile.ownedHeroes[index].gear[slot] = item
+    return true
+  }
+
+  /// Enhance the hero's equipped item in `slot` by one level, spending gold.
+  /// Returns false on unknown hero, empty slot, or insufficient gold.
+  @discardableResult
+  public mutating func enhanceGear(heroID: String, slot: GearSlot) -> Bool {
+    guard let index = profile.ownedHeroes.firstIndex(where: { $0.definitionID == heroID }),
+      var item = profile.ownedHeroes[index].gear[slot]
+    else { return false }
+    let cost = EquipmentSystem.enhanceCost(level: item.enhanceLevel)
+    guard profile.wallet.balance(of: .gold) >= cost else { return false }
+    var gold = profile.wallet.balance(of: .gold)
+    let ok = profile.equipment.enhance(item: &item, gold: &gold)
+    guard ok else { return false }
+    profile.ownedHeroes[index].gear[slot] = item
+    profile.wallet.spend(.gold, cost)
+    profile.quests.record(metric: .enhances, amount: 1)
+    return true
   }
 
   // MARK: - Idle income
 
   /// Claim offline income. Returns gold awarded. When `secondsAway` is nil the
   /// elapsed time since the last claim is used (0 on the first ever claim).
+  /// The timestamp lives on the profile so offline income survives relaunch.
   @discardableResult
   public mutating func claimIdle(secondsAway: Double? = nil) -> Int {
     let elapsed: Double
     if let secondsAway {
       elapsed = secondsAway
-    } else if let last = lastIdleClaim {
+    } else if let last = profile.lastIdleClaim {
       elapsed = Date().timeIntervalSince(last)
     } else {
       elapsed = 0
     }
     let (gold, _) = IdleIncome.earnings(bestStage: profile.bestStage, secondsAway: elapsed)
     profile.wallet.add(.gold, gold)
-    lastIdleClaim = Date()
-    profile.quests.record(metric: .idleClaims, amount: 1)
+    profile.lastIdleClaim = Date()
+    if gold > 0 {
+      profile.quests.record(metric: .idleClaims, amount: 1)
+    }
     return gold
   }
 }
