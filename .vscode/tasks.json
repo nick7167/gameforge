@@ -14,9 +14,9 @@
       "group": "test"
     },
     {
-      "label": "git-amend",
+      "label": "self-review-diff",
       "type": "shell",
-      "command": "cd /workspaces/gameforge && git add -A && git commit --amend --no-edit && git status --porcelain=v1 && echo CLEAN && git show --stat HEAD | head -20",
+      "command": "cd /workspaces/gameforge && git show HEAD -- Packages/GameCore | head -600",
       "group": "test"
     },
     {
