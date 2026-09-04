@@ -40,6 +40,11 @@
       "label": "commit-push-emberfall-shell",
       "type": "shell",
       "command": "cd /workspaces/gameforge && git add -A && git commit -m 'Replace Skyline app layer with Emberfall Realms placeholder shell' && git push origin main && git log --oneline -2"
+    },
+    {
+      "label": "watch-ci",
+      "type": "shell",
+      "command": "cd /workspaces/gameforge && gh run watch $(gh run list --repo nick7167/gameforge --limit 1 --json databaseId --jq '.[0].databaseId') --exit-status 2>&1 | tail -30"
     }
   ]
 }
