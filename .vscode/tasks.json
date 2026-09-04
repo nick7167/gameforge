@@ -30,6 +30,16 @@
       "type": "shell",
       "command": "cd /workspaces/gameforge && git add -A && git commit -m 'Address Task 10 review: 10x guarantee, gear inventory, encapsulation, idle persistence' && git log --oneline -1",
       "group": "build"
+    },
+    {
+      "label": "delete-skyline-files",
+      "type": "shell",
+      "command": "cd /workspaces/gameforge && rm -f Sources/App/SkylineGameModel.swift Sources/Game/TowerScene.swift Sources/Game/TowerSceneView.swift Sources/UI/GameHUD.swift Sources/UI/GameOverScreen.swift Sources/UI/GameplayView.swift Sources/UI/ReviveOffer.swift Sources/UI/ShopScreen.swift && rmdir Sources/Game 2>/dev/null; ls Sources/App Sources/UI Sources/Game 2>&1"
+    },
+    {
+      "label": "commit-push-emberfall-shell",
+      "type": "shell",
+      "command": "cd /workspaces/gameforge && git add -A && git commit -m 'Replace Skyline app layer with Emberfall Realms placeholder shell' && git push origin main && git log --oneline -2"
     }
   ]
 }
