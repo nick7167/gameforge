@@ -257,6 +257,13 @@ public struct EmberSession: Sendable {
 
   // MARK: - Profile helpers
 
+  /// Claim a completed quest's rewards (spec §9). Returns false when the quest
+  /// is unknown, incomplete, or already claimed. Rewards go to `profile.wallet`.
+  @discardableResult
+  public mutating func claimQuest(questID: String) -> Bool {
+    profile.quests.claim(questID: questID, wallet: &profile.wallet)
+  }
+
   /// Rename the player (profile screen).
   public mutating func renamePlayer(_ name: String) {
     let trimmed = name.trimmingCharacters(in: .whitespaces)

@@ -173,6 +173,51 @@ final class EmberGameModel: ObservableObject {
     syncProfile()
   }
 
+  // MARK: - Quests
+
+  /// Claim a completed quest's rewards (More tab, Quests screen).
+  @discardableResult
+  func claimQuest(questID: String) -> Bool {
+    let ok = session.claimQuest(questID: questID)
+    if ok {
+      syncProfile()
+      save()
+    }
+    return ok
+  }
+
+  /// Claim every claimable quest in the given list. Returns how many were claimed.
+  func claimQuests(_ quests: [QuestDefinition]) -> Int {
+    quests.reduce(0) { count, quest in count + (claimQuest(questID: quest.id) ? 1 : 0) }
+  }
+
+  // MARK: - Derived stats
+
+  /// Combat power proxy for the whole squad: attack + defense + a tenth of HP
+  /// per hero (same formula as the Heroes tab power sort).
+  func squadPower() -> Int {
+    profile.squad.reduce(0) { sum, id in
+      sum + Self.heroPower(profile.ownedHeroes.first { $0.definitionID == id })
+    }
+  }
+
+  private static func heroPower(_ hero: OwnedHero?) -> Int {
+    guard let hero else { return 0 }
+    let stats = hero.stats()
+    return Int(stats.attack + stats.defense + stats.hp / 10)
+  }
+
+  // MARK: - Data reset
+
+  /// Wipe all persisted data and start fresh (Settings: Delete Account).
+  func resetAll() {
+    ProfilePersistence.wipe()
+    let fresh = PlayerProfile.new()
+    session = EmberSession(profile: fresh, rngSeed: UInt64(Date().timeIntervalSince1970))
+    profile = fresh
+    save()
+  }
+
   // MARK: - Market
 
   /// Buy a Market entry. Returns false when unaffordable / already claimed.

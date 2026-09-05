@@ -91,7 +91,7 @@ struct HubView: View {
     case .market:
       MarketView(model: model)
     case .more:
-      ComingSoonView(title: "More")
+      MoreView(model: model, purchaseService: purchaseService)
     }
   }
 
@@ -158,7 +158,7 @@ struct HubView: View {
       }
       CurrencyChip(icon: "🪙", value: model.profile.wallet.balance(of: .gold))
       Button {
-        showToast("Settings coming in Task 9")
+        selectedTab = .more
       } label: {
         Image(systemName: "gearshape.fill")
           .font(.system(size: 18))
@@ -269,23 +269,4 @@ struct HubView: View {
 @MainActor
 enum HubSceneViewStore {
   static weak var view: SCNView?
-}
-
-/// Centered placeholder for tabs filled in by later tasks.
-private struct ComingSoonView: View {
-  let title: String
-
-  var body: some View {
-    OrnatePanel {
-      VStack(spacing: 6) {
-        Text(title)
-          .font(.system(size: 20, weight: .black, design: .rounded))
-          .foregroundColor(DS.textPrimary)
-        Text("Coming soon")
-          .font(.system(size: 13, weight: .semibold))
-          .foregroundColor(DS.textSecondary)
-      }
-      .frame(minWidth: 200)
-    }
-  }
 }

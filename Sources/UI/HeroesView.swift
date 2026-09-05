@@ -50,11 +50,7 @@ struct HeroesView: View {
     .frame(maxWidth: .infinity, alignment: .leading)
   }
 
-  private var squadPower: Int {
-    model.profile.squad.reduce(0) { sum, id in
-      sum + Self.power(of: model.profile.ownedHeroes.first { $0.definitionID == id })
-    }
-  }
+  private var squadPower: Int { model.squadPower() }
 
   /// Combat power proxy: attack + defense + a tenth of HP.
   static func power(of hero: OwnedHero?) -> Int {

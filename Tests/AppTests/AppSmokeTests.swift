@@ -1,4 +1,5 @@
 import XCTest
+import GameCore
 
 @testable import GameForge
 
@@ -78,5 +79,21 @@ final class AppSmokeTests: XCTestCase {
         let model = EmberGameModel(profile: PlayerProfile.new())
         let service = PurchaseService()
         _ = PremiumShopView(model: model, purchaseService: service, onDismiss: {}).body
+    }
+
+    @MainActor func testMoreScreensRender() {
+        let model = EmberGameModel(profile: PlayerProfile.new())
+        let service = PurchaseService()
+        _ = MoreView(model: model, purchaseService: service).body
+        _ = LeaderboardView(model: model).body
+        _ = QuestsView(model: model).body
+        _ = ProfileView(model: model).body
+        _ = SettingsView(model: model, purchaseService: service).body
+    }
+
+    @MainActor func testQuestClaimThroughModel() {
+        let model = EmberGameModel(profile: PlayerProfile.new())
+        XCTAssertFalse(model.claimQuest(questID: "d-battles"))  // incomplete
+        XCTAssertEqual(model.claimQuests(QuestSystem.dailies), 0)
     }
 }
