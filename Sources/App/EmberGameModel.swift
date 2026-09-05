@@ -42,9 +42,13 @@ final class EmberGameModel: ObservableObject {
     if battle?.outcome != .ongoing { stopTicking() }
   }
 
-  func fireUltimate(heroID: String) {
-    session.fireUltimate(heroID: heroID)
+  /// Fire a hero's ultimate. Returns the fire result (for the scene's
+  /// animation), or nil when there's no ongoing battle / the hero can't fire.
+  @discardableResult
+  func fireUltimate(heroID: String) -> BattleEngine.UltFireResult? {
+    let result = session.fireUltimate(heroID: heroID)
     battle = session.battle
+    return result
   }
 
   func finishBattle() {
