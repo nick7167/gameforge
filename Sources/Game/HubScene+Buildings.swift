@@ -11,7 +11,7 @@ extension HubScene {
     static let guildHall = UInt32(0xC9A8FF)
   }
 
-  private func buildBuildings() {
+  func buildBuildings() {
     addBuilding(
       id: "portal", label: "BATTLE", position: (0, -3),
       accentHex: 0xFF8C42) {
@@ -115,14 +115,16 @@ extension HubScene {
   }
 
   private func cylinder(radius: CGFloat, height: CGFloat, material: SCNMaterial) -> SCNNode {
-    let geometry = SCNCylinder(radiusTop: radius, radiusBottom: radius, height: height)
+    // SCNCylinder has a single radius; a zero inner tube would also do, but
+    // the plain cylinder matches every call site here.
+    let geometry = SCNCylinder(radius: radius, height: height)
     geometry.radialSegmentCount = 20
     geometry.materials = [material]
     return SCNNode(geometry: geometry)
   }
 
   private func cone(radius: CGFloat, height: CGFloat, material: SCNMaterial) -> SCNNode {
-    let geometry = SCNCone(radiusTop: 0, radiusBottom: radius, height: height)
+    let geometry = SCNCone(topRadius: 0, bottomRadius: radius, height: height)
     geometry.radialSegmentCount = 20
     geometry.materials = [material]
     return SCNNode(geometry: geometry)
@@ -204,7 +206,7 @@ extension HubScene {
 
     let awning = SCNPlane(width: 1.7, height: 1.0)
     awning.materials = [stone(at: 0xC9584A)]
-    awning.isDoubleSided = true
+    awning.materials.first?.isDoubleSided = true
     let awningNode = SCNNode(geometry: awning)
     awningNode.position = SCNVector3(0, 1.75, -0.1)
     awningNode.eulerAngles.x = .pi / 3 // tilt toward the counter

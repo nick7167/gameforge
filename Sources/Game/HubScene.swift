@@ -4,7 +4,8 @@ import SceneKit
 import UIKit
 
 /// Scene hex palette — mirrors the battle stage's dusk language.
-private enum HubHex {
+/// Internal: shared with the HubScene+Buildings extension file.
+enum HubHex {
   static let sky = UInt32(0x1A0F2A)
   static let fog = UInt32(0x120A1E)
   static let platform = UInt32(0x3A2C50)
