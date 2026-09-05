@@ -30,8 +30,8 @@ public struct GachaEngine: Sendable {
   private static let rareRate = 0.30
   // common = remainder (0.58)
 
-  private static let epicPityLimit = 10
-  private static let legendaryPityLimit = 60
+  public static let epicPityLimit = 10
+  public static let legendaryPityLimit = 60
 
   /// Chance that a rolled Legendary on a featured banner is the featured hero.
   private static let featuredLegendaryChance = 0.5

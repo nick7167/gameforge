@@ -79,7 +79,7 @@ struct HubView: View {
     case .heroes:
       HeroesView(model: model)
     case .summon:
-      ComingSoonView(title: "Summon")
+      SummonView(model: model)
     case .market:
       ComingSoonView(title: "Market")
     case .more:

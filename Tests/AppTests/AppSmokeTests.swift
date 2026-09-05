@@ -48,4 +48,24 @@ final class AppSmokeTests: XCTestCase {
         let view = HeroDetailView(model: model, heroID: model.profile.squad[0])
         _ = view.body
     }
+
+    @MainActor func testSummonViewRenders() {
+        let model = EmberGameModel(profile: PlayerProfile.new())
+        let view = SummonView(model: model)
+        _ = view.body
+        model.addGemsForTesting(10_000)
+        model.summon(banner: .permanent, count: 1)
+        model.consumeSummonResults()
+        XCTAssertNil(model.lastSummonResults)
+    }
+
+    @MainActor func testSummonRevealViewRenders() {
+        let model = EmberGameModel(profile: PlayerProfile.new())
+        model.addGemsForTesting(10_000)
+        model.summon(banner: .permanent, count: 1)
+        let results = model.lastSummonResults ?? []
+        model.consumeSummonResults()
+        let view = SummonRevealView(items: results, onDismiss: {})
+        _ = view.body
+    }
 }

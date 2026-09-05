@@ -143,7 +143,33 @@ public struct EmberSession: Sendable {
     guard (1...10).contains(count) else { return nil }
     let cost = count == 10 ? GachaEngine.multiCost : GachaEngine.singleCost * count
     guard profile.wallet.spend(.gems, cost) else { return nil }
+    return performSummons(banner: banner, count: count)
+  }
 
+  /// The daily free single summon (spec §6.2). Costs nothing; tracks the last
+  /// used day on the profile so it survives relaunch. Returns nil when the
+  /// free pull was already used today.
+  @discardableResult
+  public mutating func freeDailySummon() -> [GachaEngine.PullResult]? {
+    let today = Self.dayIndex(Date())
+    if profile.lastFreeSummonDay == today { return nil }
+    guard let results = performSummons(banner: .permanent, count: 1) else { return nil }
+    profile.lastFreeSummonDay = today
+    return results
+  }
+
+  /// Day index used for the free-pull check. Ordinality within the era is a
+  /// monotonically increasing day count, so it never repeats across years.
+  public static func dayIndex(_ date: Date) -> Int {
+    Calendar(identifier: .gregorian).ordinality(of: .day, in: .era, for: date) ?? 0
+  }
+
+  /// Shared pull loop (no cost handling). Caller pays the gem cost first.
+  /// On a 10× summon the last pull gets the Rare+ guarantee when needed.
+  private mutating func performSummons(
+    banner: GachaEngine.BannerKind, count: Int
+  ) -> [GachaEngine.PullResult]? {
+    guard (1...10).contains(count) else { return nil }
     var engine = GachaEngine(state: profile.gacha)
     var owned = Set(profile.ownedHeroes.map(\.definitionID))
     var rng = SeededGenerator(seed: rngSeed &+ UInt64(profile.totalSummons))

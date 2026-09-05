@@ -48,4 +48,16 @@ final class EmberGameModelTests: XCTestCase {
         model.setSquad(ids) // all 5 owned — accepted
         XCTAssertEqual(model.profile.squad, ids)
     }
+
+    func testFreeDailySummonOncePerDay() {
+        let model = EmberGameModel(profile: PlayerProfile.new())
+        XCTAssertTrue(model.freeSummonAvailable)
+        XCTAssertTrue(model.freeDailySummon())
+        XCTAssertEqual(model.profile.totalSummons, 1)
+        XCTAssertFalse(model.freeDailySummon()) // already used today
+        XCTAssertEqual(model.profile.totalSummons, 1) // second call pulled nothing
+        XCTAssertFalse(model.freeSummonAvailable)
+        model.consumeSummonResults()
+        XCTAssertNil(model.lastSummonResults)
+    }
 }

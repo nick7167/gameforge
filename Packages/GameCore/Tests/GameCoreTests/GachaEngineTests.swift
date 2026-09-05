@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import GameCore
 
@@ -11,6 +12,24 @@ import Testing
     // swiftlint:disable force_try
     try! engine.pull(banner: banner, shards: &shards, ownedHeroIDs: ownedHeroIDs, rng: &rng)
     // swiftlint:enable force_try
+  }
+
+  @Test func freeDailySummonOncePerDay() {
+    var session = EmberSession(profile: .new(), rngSeed: 42)
+    let first = session.freeDailySummon()
+    #expect(first?.count == 1)
+    #expect(session.profile.totalSummons == 1)
+    #expect(session.freeDailySummon() == nil) // already used today
+    #expect(session.profile.totalSummons == 1) // second call pulled nothing
+  }
+
+  @Test func freeDailySummonPersistsDay() {
+    var session = EmberSession(profile: .new(), rngSeed: 42)
+    _ = session.freeDailySummon()
+    #expect(session.profile.lastFreeSummonDay == EmberSession.dayIndex(Date()))
+    // A session reloaded from the same profile still sees today's pull as used.
+    var reloaded = EmberSession(profile: session.profile, rngSeed: 42)
+    #expect(reloaded.freeDailySummon() == nil)
   }
 
   @Test func pullCostsShards() {

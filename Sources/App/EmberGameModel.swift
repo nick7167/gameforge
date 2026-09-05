@@ -83,6 +83,27 @@ final class EmberGameModel: ObservableObject {
     save()
   }
 
+  /// The cost-free daily single summon (spec §6.2). Returns false when already
+  /// used today; on success the results land in `lastSummonResults`.
+  @discardableResult
+  func freeDailySummon() -> Bool {
+    guard let results = session.freeDailySummon() else { return false }
+    lastSummonResults = results
+    syncProfile()
+    save()
+    return true
+  }
+
+  /// Whether today's free daily summon is still available (UI affordance).
+  var freeSummonAvailable: Bool {
+    session.profile.lastFreeSummonDay != EmberSession.dayIndex(Date())
+  }
+
+  /// Clear the summon results after the reveal overlay consumed them.
+  func consumeSummonResults() {
+    lastSummonResults = nil
+  }
+
   func levelUpHero(heroID: String) {
     _ = session.levelUpHero(heroID: heroID)
     syncProfile()

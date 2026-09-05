@@ -62,6 +62,8 @@ public struct PlayerProfile: Sendable, Codable {
   public private(set) var gearInventory: [GearItem] = []
   /// Last idle-income claim timestamp, so offline income survives relaunch.
   public var lastIdleClaim: Date?
+  /// Day index (see `EmberSession.dayIndex`) of the last free daily summon.
+  public var lastFreeSummonDay: Int = 0
 
   public init(
     name: String, accountLevel: Int, wallet: Wallet, ownedHeroes: [OwnedHero], squad: [String],
@@ -98,6 +100,7 @@ public struct PlayerProfile: Sendable, Codable {
     totalSummons = try container.decode(Int.self, forKey: .totalSummons)
     gearInventory = try container.decodeIfPresent([GearItem].self, forKey: .gearInventory) ?? []
     lastIdleClaim = try container.decodeIfPresent(Date.self, forKey: .lastIdleClaim)
+    lastFreeSummonDay = try container.decodeIfPresent(Int.self, forKey: .lastFreeSummonDay) ?? 0
   }
 
   /// Append gear drops to the inventory (called by the session on battle loot).
