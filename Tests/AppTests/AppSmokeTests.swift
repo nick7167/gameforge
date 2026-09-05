@@ -14,6 +14,15 @@ final class AppSmokeTests: XCTestCase {
         _ = view.body
     }
 
+    func testBattleViewRenders() {
+        let model = EmberGameModel(profile: PlayerProfile.new())
+        model.startBattle()
+        let view = BattleView(model: model)
+        _ = view.body
+        for _ in 0..<200 where model.battle?.outcome == .ongoing { model.tickBattle(0.1) }
+        model.finishBattle()
+    }
+
     func testPlayerProfilePersistenceRoundTrip() throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)

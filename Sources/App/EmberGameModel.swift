@@ -15,6 +15,8 @@ final class EmberGameModel: ObservableObject {
 
   private var session: EmberSession
   private var tickTimer: Timer?
+  /// Battle speed (1–4). The timer still fires at 30 Hz; the dt is scaled.
+  private var tickMultiplier = 1
 
   var currentStage: StageID { session.currentStage }
 
@@ -56,7 +58,7 @@ final class EmberGameModel: ObservableObject {
     stopTicking()
     let timer = Timer(timeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
       MainActor.assumeIsolated {
-        self?.tickBattle(1.0 / 30.0)
+        self?.tickBattle(1.0 / 30.0 * Double(self?.tickMultiplier ?? 1))
       }
     }
     RunLoop.main.add(timer, forMode: .common)
@@ -66,6 +68,11 @@ final class EmberGameModel: ObservableObject {
   private func stopTicking() {
     tickTimer?.invalidate()
     tickTimer = nil
+  }
+
+  /// Set battle speed (clamped to 1...4). Applied as a dt scale in the tick loop.
+  func setSpeed(_ s: Int) {
+    tickMultiplier = max(1, min(4, s))
   }
 
   // MARK: - Meta actions

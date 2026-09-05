@@ -295,6 +295,21 @@ final class BattleScene {
     cameraNode.look(at: SCNVector3(sin(time * 0.2) * 0.6, 2.2, 0))
   }
 
+  // MARK: - Projection
+
+  /// Screen-space position above a unit's head for HUD overlays. Projects the
+  /// node's world position with a 2.4-unit y-offset; nil when the node is
+  /// missing or outside the view frustum.
+  func unitScreenPosition(unitID: String, in scnView: SCNView) -> CGPoint? {
+    let node = heroNodes[unitID] ?? enemyNodes[unitID]
+    guard let node else { return nil }
+    let world = node.worldPosition
+    let projected = scnView.projectPoint(SCNVector3(world.x, world.y + 2.4, world.z))
+    // z outside 0...1 means behind the camera or clipped.
+    guard projected.z >= 0, projected.z <= 1 else { return nil }
+    return CGPoint(x: CGFloat(projected.x), y: CGFloat(projected.y))
+  }
+
   // MARK: - Ultimates
 
   /// Camera shake + particle burst at the target; the view layer flashes via `onUltFlash`.
