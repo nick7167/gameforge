@@ -104,7 +104,7 @@ struct CurrencyChip: View {
         .font(.system(size: 13, weight: .bold, design: .rounded))
         .foregroundColor(DS.textPrimary)
       if showsPlus {
-        Text("\+")
+        Text("+")
           .font(.system(size: 12, weight: .black, design: .rounded))
           .foregroundColor(DS.goldLight)
       }
