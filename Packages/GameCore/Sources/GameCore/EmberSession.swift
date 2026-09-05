@@ -214,6 +214,21 @@ public struct EmberSession: Sendable {
     return true
   }
 
+  // MARK: - Profile helpers
+
+  /// Rename the player (profile screen).
+  public mutating func renamePlayer(_ name: String) {
+    let trimmed = name.trimmingCharacters(in: .whitespaces)
+    guard !trimmed.isEmpty else { return }
+    profile.name = String(trimmed.prefix(20))
+  }
+
+  /// Grant gems (IAP fulfillment, rewards). Server-validated later (Plan 3).
+  public mutating func grantGems(_ amount: Int) {
+    guard amount > 0 else { return }
+    profile.wallet.add(.gems, amount)
+  }
+
   // MARK: - Idle income
 
   /// Claim offline income. Returns gold awarded. When `secondsAway` is nil the

@@ -334,4 +334,24 @@ import Testing
     // 40% drop chance per victory: at least one of 20 seeded victories must drop.
     #expect(sawDrop)
   }
+
+  // MARK: - Profile helpers (added for the app-layer facade)
+
+  @Test func renamePlayerTrimsAndLimits() {
+    var session = EmberSession()
+    session.renamePlayer("  Ember Knight  ")
+    #expect(session.profile.name == "Ember Knight")
+    session.renamePlayer(String(repeating: "x", count: 50))
+    #expect(session.profile.name.count == 20)
+    session.renamePlayer("   ")
+    #expect(session.profile.name == String(repeating: "x", count: 20)) // unchanged
+  }
+
+  @Test func grantGemsOnlyPositive() {
+    var session = EmberSession()
+    let before = session.profile.wallet.balance(of: .gems)
+    session.grantGems(100)
+    session.grantGems(-50)
+    #expect(session.profile.wallet.balance(of: .gems) == before + 100)
+  }
 }

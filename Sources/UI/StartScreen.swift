@@ -1,4 +1,3 @@
-import GameCore
 import SwiftUI
 
 /// Minimal Emberfall Realms start screen (placeholder shell — Plan 2
@@ -6,7 +5,7 @@ import SwiftUI
 /// direction (design spec §13): dark rich background, gold gradient
 /// title, chunky gold CTA.
 struct StartScreen: View {
-  let profile: PlayerProfile
+  @ObservedObject var model: EmberGameModel
 
   private let goldLight = Color(red: 1.00, green: 0.84, blue: 0.44)
   private let goldDeep = Color(red: 0.85, green: 0.62, blue: 0.25)

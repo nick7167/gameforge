@@ -1,7 +1,5 @@
 import XCTest
 
-import GameCore
-
 @testable import GameForge
 
 final class AppSmokeTests: XCTestCase {
@@ -12,7 +10,7 @@ final class AppSmokeTests: XCTestCase {
     }
 
     func testStartScreenRenders() {
-        let view = StartScreen(profile: PlayerProfile.new())
+        let view = StartScreen(model: EmberGameModel(profile: PlayerProfile.new()))
         _ = view.body
     }
 
