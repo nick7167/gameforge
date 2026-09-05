@@ -25,6 +25,8 @@ struct BattleView: View {
   }
 
   @ObservedObject var model: EmberGameModel
+  /// Called by NEXT after the battle is finished — returns control to the hub.
+  let onFinish: () -> Void
   @StateObject private var coordinator = BattleCoordinator()
   @State private var autoUlt = false
   @State private var speed = 1
@@ -311,8 +313,10 @@ struct BattleView: View {
         }
         GoldButton(title: victory ? "NEXT" : "RETRY", style: .gold) {
           model.finishBattle()
-          if !victory {
-            model.startBattle()
+          if victory {
+            onFinish() // back to the hub
+          } else {
+            model.startBattle() // stay in battle
           }
         }
       }

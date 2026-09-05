@@ -9,15 +9,16 @@ final class AppSmokeTests: XCTestCase {
         _ = view.body
     }
 
-    func testStartScreenRenders() {
-        let view = StartScreen(model: EmberGameModel(profile: PlayerProfile.new()))
+    func testHubViewRenders() {
+        let model = EmberGameModel(profile: PlayerProfile.new())
+        let view = HubView(model: model, onStartBattle: {})
         _ = view.body
     }
 
     func testBattleViewRenders() {
         let model = EmberGameModel(profile: PlayerProfile.new())
         model.startBattle()
-        let view = BattleView(model: model)
+        let view = BattleView(model: model, onFinish: {})
         _ = view.body
         for _ in 0..<200 where model.battle?.outcome == .ongoing { model.tickBattle(0.1) }
         model.finishBattle()
