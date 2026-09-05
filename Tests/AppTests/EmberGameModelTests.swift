@@ -39,4 +39,13 @@ final class EmberGameModelTests: XCTestCase {
         XCTAssertEqual(reloaded.profile.name, "Test Keeper")
         ProfilePersistence.wipe()
     }
+
+    func testSetSquadValidation() {
+        let model = EmberGameModel(profile: PlayerProfile.new())
+        let ids = model.profile.ownedHeroes.map(\.definitionID)
+        model.setSquad(Array(ids.prefix(3))) // too few — rejected
+        XCTAssertEqual(model.profile.squad.count, 5)
+        model.setSquad(ids) // all 5 owned — accepted
+        XCTAssertEqual(model.profile.squad, ids)
+    }
 }

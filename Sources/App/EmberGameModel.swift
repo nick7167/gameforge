@@ -89,6 +89,16 @@ final class EmberGameModel: ObservableObject {
     save()
   }
 
+  /// Replace the squad. Validates count/uniqueness/ownership; no-op on invalid input.
+  func setSquad(_ ids: [String]) {
+    guard ids.count == 5, Set(ids).count == 5,
+      ids.allSatisfy({ id in profile.ownedHeroes.contains { $0.definitionID == id } })
+    else { return }
+    session.setSquad(ids)
+    profile = session.profile
+    save()
+  }
+
   func equipGear(heroID: String, item: GearItem, slot: GearSlot) {
     _ = session.equipGear(heroID: heroID, item: item, slot: slot)
     syncProfile()

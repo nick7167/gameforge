@@ -37,4 +37,15 @@ final class AppSmokeTests: XCTestCase {
         XCTAssertEqual(loaded.name, "Ember Knight")
         XCTAssertEqual(loaded.accountLevel, 7)
     }
+
+    @MainActor func testHeroesViewRenders() {
+        let model = EmberGameModel(profile: PlayerProfile.new())
+        _ = HeroesView(model: model).body
+    }
+
+    @MainActor func testHeroDetailViewRenders() {
+        let model = EmberGameModel(profile: PlayerProfile.new())
+        let view = HeroDetailView(model: model, heroID: model.profile.squad[0])
+        _ = view.body
+    }
 }

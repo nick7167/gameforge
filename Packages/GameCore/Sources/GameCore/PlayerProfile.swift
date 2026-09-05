@@ -105,6 +105,15 @@ public struct PlayerProfile: Sendable, Codable {
     gearInventory.append(contentsOf: items)
   }
 
+  /// Remove a gear item by ID from the inventory (called by the session when
+  /// a piece of gear is equipped to a hero). Returns true if removed.
+  @discardableResult
+  public mutating func removeFromGearInventory(_ id: UUID) -> Bool {
+    guard let index = gearInventory.firstIndex(where: { $0.id == id }) else { return false }
+    gearInventory.remove(at: index)
+    return true
+  }
+
   /// Fresh profile: starter squad (one hero per faction + one extra DPS),
   /// 2000 gold, 300 gems, campaign at 1-1.
   public static func new() -> PlayerProfile {

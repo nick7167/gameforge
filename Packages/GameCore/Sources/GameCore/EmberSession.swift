@@ -183,8 +183,18 @@ public struct EmberSession: Sendable {
 
   public static func heroLevelCost(level: Int) -> Int { 800 * level }
 
+  /// Replace the squad. Validates count/uniqueness/ownership; no-op on invalid input.
+  public mutating func setSquad(_ ids: [String]) {
+    guard ids.count == 5, Set(ids).count == 5,
+      ids.allSatisfy({ id in profile.ownedHeroes.contains { $0.definitionID == id } })
+    else { return }
+    profile.squad = ids
+  }
+
   /// Equip a gear item into a hero's slot (replaces whatever was there).
-  /// Fails on unknown heroes or a slot/item mismatch.
+  /// The item leaves the gear inventory; a previously equipped item in the
+  /// same slot returns to the inventory. Fails on unknown heroes or a
+  /// slot/item mismatch.
   @discardableResult
   public mutating func equipGear(heroID: String, item: GearItem, slot: GearSlot) -> Bool {
     guard profile.ownedHeroes.contains(where: { $0.definitionID == heroID }) else { return false }
@@ -192,7 +202,12 @@ public struct EmberSession: Sendable {
     guard let index = profile.ownedHeroes.firstIndex(where: { $0.definitionID == heroID }) else {
       return false
     }
+    // Return whatever was in the slot back to the inventory.
+    if let previous = profile.ownedHeroes[index].gear[slot] {
+      profile.addToGearInventory([previous])
+    }
     profile.ownedHeroes[index].gear[slot] = item
+    profile.removeFromGearInventory(item.id)
     return true
   }
 

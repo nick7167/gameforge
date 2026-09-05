@@ -258,6 +258,33 @@ import Testing
     #expect(equipped.stats().defense == base.defense + 30)
   }
 
+  @Test func equipSwapsWithInventory() {
+    let rareItem = GearItem(slot: .weapon, rarity: .rare, mainStat: GearStat(kind: .attack, value: 10))
+    let epicItem = GearItem(slot: .weapon, rarity: .epic, mainStat: GearStat(kind: .attack, value: 30))
+    var session = EmberSession(profile: .new(), rngSeed: 42) {
+      $0.addToGearInventory([rareItem, epicItem])
+    }
+    let heroID = session.profile.squad[0]
+    session.equipGear(heroID: heroID, item: rareItem, slot: .weapon)
+    #expect(session.profile.gearInventory.count == 1) // epic still in inventory
+    session.equipGear(heroID: heroID, item: epicItem, slot: .weapon)
+    #expect(session.profile.gearInventory.count == 1) // old weapon returned
+    #expect(session.profile.gearInventory[0].rarity == .rare)
+  }
+
+  // MARK: - Squad management
+
+  @Test func setSquadValidates() {
+    var session = EmberSession()
+    let owned = session.profile.ownedHeroes.map(\.definitionID)
+    session.setSquad(Array(owned.prefix(2)))
+    #expect(session.profile.squad.count == 5) // rejected: too few
+    session.setSquad(owned)
+    #expect(session.profile.squad == owned)
+    session.setSquad(owned.dropFirst().map { $0 } + ["nonexistent"])
+    #expect(session.profile.squad == owned) // rejected: unknown hero
+  }
+
   // MARK: - Idle income
 
   @Test func idleClaimGrantsGold() {

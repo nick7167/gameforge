@@ -77,7 +77,7 @@ struct HubView: View {
     case .hub:
       hubLayer
     case .heroes:
-      ComingSoonView(title: "Heroes")
+      HeroesView(model: model)
     case .summon:
       ComingSoonView(title: "Summon")
     case .market:
