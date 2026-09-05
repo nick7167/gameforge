@@ -72,15 +72,11 @@ final class BattleScene {
     dome.geometry?.firstMaterial?.diffuse.contents = SceneKitSupport.uiColor(hex: Hex.sky)
     dome.geometry?.firstMaterial?.cullMode = .front // render the inside of the sphere
     scene.rootNode.addChildNode(dome)
-
-    scene.fog = SCNFog()
-    scene.fog?.color = SceneKitSupport.uiColor(hex: Hex.fog)
-    scene.fog?.start = 25
-    scene.fog?.end = 90
   }
 
   private func buildArena() {
-    let disc = SCNCylinder(radiusTop: 11, radiusBottom: 12.5, height: 1.4)
+    // Truncated-cone arena disc: slightly wider at the base.
+    let disc = SCNCone(topRadius: 11, bottomRadius: 12.5, height: 1.4)
     disc.radialSegmentCount = 64
     let material = SCNMaterial()
     material.lightingModel = .lambert

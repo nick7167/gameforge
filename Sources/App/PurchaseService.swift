@@ -46,7 +46,7 @@ final class PurchaseService: ObservableObject {
     let info = try? await Purchases.shared.customerInfo()
     removeAdsOwned = info?.entitlements["remove_ads"]?.isActive == true
     growthBundleOwned =
-      info?.nonSubscriptions.contains(where: { $0.productID == Self.growthBundleProductID }) == true
+      info?.nonSubscriptions.contains(where: { $0.productIdentifier == Self.growthBundleProductID }) == true
     monthlyCardActive = info?.entitlements["monthly_card"]?.isActive == true
   }
 

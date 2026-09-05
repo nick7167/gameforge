@@ -56,15 +56,11 @@ final class HubScene {
     dome.geometry?.firstMaterial?.diffuse.contents = SceneKitSupport.uiColor(hex: HubHex.sky)
     dome.geometry?.firstMaterial?.cullMode = .front // render the inside of the sphere
     scene.rootNode.addChildNode(dome)
-
-    scene.fog = SCNFog()
-    scene.fog?.color = SceneKitSupport.uiColor(hex: HubHex.fog)
-    scene.fog?.start = 25
-    scene.fog?.end = 90
   }
 
   private func buildArena() {
-    let disc = SCNCylinder(radiusTop: 7, radiusBottom: 7.4, height: 0.6)
+    // Truncated-cone arena disc: slightly wider at the base.
+    let disc = SCNCone(topRadius: 7, bottomRadius: 7.4, height: 0.6)
     disc.radialSegmentCount = 64
     let material = SCNMaterial()
     material.lightingModel = .lambert
@@ -218,7 +214,7 @@ final class HubScene {
       var current: SCNNode? = hit.node
       while let node = current {
         guard let name = node.name else {
-          current = node.parentNode
+          current = node.parent
           continue
         }
         if name.hasPrefix(Self.buildingPrefix) {
@@ -227,7 +223,7 @@ final class HubScene {
         if name.hasPrefix(Self.heroPrefix) {
           return nil
         }
-        current = node.parentNode
+        current = node.parent
       }
     }
     return nil

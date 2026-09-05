@@ -134,7 +134,7 @@ struct PremiumShopView: View {
   private func showToast(_ message: String) {
     toast = message
     Task { @MainActor in
-      try? Task.sleep(for: .seconds(2))
+      try? await Task.sleep(for: .seconds(2))
       toast = nil
     }
   }

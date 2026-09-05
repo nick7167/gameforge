@@ -257,7 +257,7 @@ struct HubView: View {
     toastTask?.cancel()
     toast = message
     toastTask = Task { @MainActor in
-      try? Task.sleep(for: .seconds(2))
+      try? await Task.sleep(for: .seconds(2))
       guard !Task.isCancelled else { return }
       toast = nil
     }
