@@ -45,7 +45,8 @@ final class PurchaseService: ObservableObject {
     guard isConfigured else { return }
     let info = try? await Purchases.shared.customerInfo()
     removeAdsOwned = info?.entitlements["remove_ads"]?.isActive == true
-    growthBundleOwned = info?.nonSubscriptions.contains(Self.growthBundleProductID) == true
+    growthBundleOwned =
+      info?.nonSubscriptions.contains(where: { $0.productID == Self.growthBundleProductID }) == true
     monthlyCardActive = info?.entitlements["monthly_card"]?.isActive == true
   }
 

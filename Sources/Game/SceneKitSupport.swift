@@ -48,12 +48,12 @@ enum SceneKitSupport {
   /// Two concentric additive rings — the faction-colored stage circle under a unit.
   static func stageCircle(hex: UInt32) -> SCNNode {
     let group = SCNNode()
-    let inner = SCNNode(geometry: SCNRing(innerRadius: 0.72, outerRadius: 0.95))
+    let inner = SCNNode(geometry: SCNTube(innerRadius: 0.72, outerRadius: 0.95, height: 0.02))
     inner.geometry?.materials = [flatMaterial(hex: hex, additive: true)]
-    let outer = SCNNode(geometry: SCNRing(innerRadius: 0.98, outerRadius: 1.04))
+    let outer = SCNNode(geometry: SCNTube(innerRadius: 0.98, outerRadius: 1.04, height: 0.02))
     outer.geometry?.materials = [flatMaterial(hex: hex, additive: true)]
     for ring in [inner, outer] {
-      ring.eulerAngles.x = -.pi / 2 // SCNRing lies in the XY plane; lay it flat on the stage
+      // SCNTube's axis is Y, so the rings already lie flat on the stage floor.
       ring.position = SCNVector3(0, 0.06, 0)
       group.addChildNode(ring)
     }
@@ -70,8 +70,8 @@ enum SceneKitSupport {
     let node = SCNNode(geometry: geometry)
     node.scale = SCNVector3(0.01, 0.01, 0.01)
     let (minBound, maxBound) = node.boundingBox
-    // SCNMatrix4MakeTranslation takes CGFloat; boundingBox components are Float on iOS.
-    node.pivot = SCNMatrix4MakeTranslation(CGFloat((maxBound.x - minBound.x) / 2), 0, 0)
+    // boundingBox components are Float on iOS; SCNMatrix4MakeTranslation takes Float.
+    node.pivot = SCNMatrix4MakeTranslation((maxBound.x - minBound.x) / 2, 0, 0)
     let billboard = SCNBillboardConstraint()
     billboard.freeAxes = .Y
     node.constraints = [billboard]
