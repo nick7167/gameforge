@@ -6,22 +6,34 @@ import RevenueCat
 /// degrades to a no-op otherwise so the game always runs.
 @MainActor
 final class PurchaseService: ObservableObject {
-  static let removeAdsProductID = "dev.adrez.skyline.removeads"
-  static let coinPackProductIDs = [
-    "dev.adrez.skyline.coins.small": 100,
-    "dev.adrez.skyline.coins.medium": 350,
-    "dev.adrez.skyline.coins.large": 700
+  static let removeAdsProductID = "dev.adrez.emberfall.removeads"
+  static let growthBundleProductID = "dev.adrez.emberfall.growthbundle"
+  static let monthlyCardProductID = "dev.adrez.emberfall.monthlycard"
+  /// Gem pack product metadata.
+  struct GemPack: Sendable {
+    let id: String
+    let gems: Int
+    let priceUSD: String
+  }
+  /// Gem packs (consumables). `gems` is granted on purchase via `onGemsGranted`.
+  static let gemPackProducts: [GemPack] = [
+    GemPack(id: "dev.adrez.emberfall.gems.small", gems: 100, priceUSD: "$0.99"),
+    GemPack(id: "dev.adrez.emberfall.gems.medium", gems: 550, priceUSD: "$4.99"),
+    GemPack(id: "dev.adrez.emberfall.gems.large", gems: 1200, priceUSD: "$9.99"),
+    GemPack(id: "dev.adrez.emberfall.gems.xl", gems: 3300, priceUSD: "$24.99"),
+    GemPack(id: "dev.adrez.emberfall.gems.huge", gems: 7000, priceUSD: "$49.99"),
+    GemPack(id: "dev.adrez.emberfall.gems.massive", gems: 15000, priceUSD: "$99.99")
   ]
-  static let districtPackProductIDs: Set<String> = ["dev.adrez.skyline.pack.medieval"]
 
   @Published private(set) var removeAdsOwned = false
-  @Published private(set) var ownedPackIDs: Set<String> = []
+  @Published private(set) var growthBundleOwned = false
+  @Published private(set) var monthlyCardActive = false
   @Published private(set) var isConfigured = false
 
-  private var onCoinsGranted: ((Int) -> Void)?
+  private var onGemsGranted: ((Int) -> Void)?
 
-  func configure(apiKey: String?, onCoinsGranted: @escaping (Int) -> Void) {
-    self.onCoinsGranted = onCoinsGranted
+  func configure(apiKey: String?, onGemsGranted: @escaping (Int) -> Void) {
+    self.onGemsGranted = onGemsGranted
     guard let apiKey, !apiKey.isEmpty else { return }
     Purchases.logLevel = .warn
     let configuration = Configuration.Builder(withAPIKey: apiKey).build()
@@ -33,7 +45,8 @@ final class PurchaseService: ObservableObject {
     guard isConfigured else { return }
     let info = try? await Purchases.shared.customerInfo()
     removeAdsOwned = info?.entitlements["remove_ads"]?.isActive == true
-    ownedPackIDs = Set(info?.activeSubscriptions ?? [])
+    growthBundleOwned = info?.nonSubscriptions.contains(Self.growthBundleProductID) == true
+    monthlyCardActive = info?.entitlements["monthly_card"]?.isActive == true
   }
 
   func purchase(productID: String) async -> Bool {
@@ -44,8 +57,8 @@ final class PurchaseService: ObservableObject {
       let result = try await Purchases.shared.purchase(product: product)
       if result.userCancelled { return false }
       await refreshEntitlements()
-      if let coins = Self.coinPackProductIDs[productID] {
-        onCoinsGranted?(coins)
+      if let gems = Self.gemPackProducts.first(where: { $0.id == productID })?.gems {
+        onGemsGranted?(gems)
       }
       if productID == Self.removeAdsProductID {
         removeAdsOwned = true
@@ -60,11 +73,5 @@ final class PurchaseService: ObservableObject {
     guard isConfigured else { return }
     _ = try? await Purchases.shared.restorePurchases()
     await refreshEntitlements()
-  }
-
-  func grantCoinsIfPurchased(productID: String) -> Int? {
-    guard let coins = Self.coinPackProductIDs[productID] else { return nil }
-    onCoinsGranted?(coins)
-    return coins
   }
 }

@@ -60,4 +60,23 @@ final class EmberGameModelTests: XCTestCase {
         model.consumeSummonResults()
         XCTAssertNil(model.lastSummonResults)
     }
+
+    func testBuyMarketGearBox() {
+        let model = EmberGameModel(profile: PlayerProfile.new())
+        model.grantGoldForTesting(100_000)
+        let entry = MarketSystem.dailyStock().first { $0.currency == .gold && $0.price > 0 && $0.kind.isGearBox }
+        XCTAssertNotNil(entry)
+        guard let entry else { return }
+        let before = model.profile.gearInventory.count
+        XCTAssertTrue(model.buyMarket(entryID: entry.id))
+        XCTAssertEqual(model.profile.gearInventory.count, before + 1)
+    }
+
+    func testFreeMarketClaimOncePerDay() {
+        let model = EmberGameModel(profile: PlayerProfile.new())
+        XCTAssertFalse(model.freeMarketClaimedToday())
+        XCTAssertTrue(model.buyMarket(entryID: "free-daily"))
+        XCTAssertTrue(model.freeMarketClaimedToday())
+        XCTAssertFalse(model.buyMarket(entryID: "free-daily"))
+    }
 }

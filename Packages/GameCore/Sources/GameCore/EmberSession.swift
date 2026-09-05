@@ -266,8 +266,51 @@ public struct EmberSession: Sendable {
 
   /// Grant gems (IAP fulfillment, rewards). Server-validated later (Plan 3).
   public mutating func grantGems(_ amount: Int) {
+    grantCurrency(.gems, amount)
+  }
+
+  /// Grant any currency (IAP fulfillment, test hooks, market fulfillment).
+  public mutating func grantCurrency(_ currency: Currency, _ amount: Int) {
     guard amount > 0 else { return }
-    profile.wallet.add(.gems, amount)
+    profile.wallet.add(currency, amount)
+  }
+
+  // MARK: - Market
+
+  /// Whether today's free Market item is still unclaimed.
+  public func freeMarketClaimedToday(date: Date = Date()) -> Bool {
+    profile.lastFreeMarketClaimDay == Self.dayIndex(date)
+  }
+
+  /// Buy a market entry. Spends the entry's currency, grants the item/gold/gems.
+  /// Free items (price 0) cost nothing but can only be claimed once per day
+  /// (tracked via `profile.lastFreeMarketClaimDay`).
+  @discardableResult
+  public mutating func buyMarket(entryID: String, date: Date = Date()) -> Bool {
+    guard let entry = MarketSystem.dailyStock(for: date).first(where: { $0.id == entryID }) else {
+      return false
+    }
+    if entry.price == 0 {
+      let today = Self.dayIndex(date)
+      guard profile.lastFreeMarketClaimDay != today else { return false }
+      profile.lastFreeMarketClaimDay = today
+    } else {
+      guard profile.wallet.spend(entry.currency, entry.price) else { return false }
+    }
+    switch entry.kind {
+    case .gearBox(let rarity):
+      var rng = SeededGenerator(
+        seed: rngSeed &+ UInt64(profile.gearInventory.count) &+ UInt64(Self.dayIndex(date)))
+      let drop = profile.equipment.generateDrop(rarity: rarity, rng: &rng)
+      profile.addToGearInventory([drop])
+    case .goldPack(let amount):
+      profile.wallet.add(.gold, amount)
+    case .xpPotion(let amount):
+      profile.accountLevel += max(1, amount / 100)  // v1 placeholder progression
+    case .gemBundle(let amount):
+      profile.wallet.add(.gems, amount)
+    }
+    return true
   }
 
   // MARK: - Idle income

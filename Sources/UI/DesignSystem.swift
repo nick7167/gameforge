@@ -89,10 +89,13 @@ struct OrnatePanel<Content: View>: View {
   }
 }
 
-/// Currency chip for the top bar.
+/// Currency chip for the top bar. Optionally shows a small "\+" affordance
+/// (used on the gems chip to open the premium shop).
 struct CurrencyChip: View {
   let icon: String
   let value: Int
+  var showsPlus = false
+  var action: (() -> Void)? = nil
 
   var body: some View {
     HStack(spacing: 5) {
@@ -100,11 +103,18 @@ struct CurrencyChip: View {
       Text(value.formatted())
         .font(.system(size: 13, weight: .bold, design: .rounded))
         .foregroundColor(DS.textPrimary)
+      if showsPlus {
+        Text("\+")
+          .font(.system(size: 12, weight: .black, design: .rounded))
+          .foregroundColor(DS.goldLight)
+      }
     }
     .padding(.horizontal, 10)
     .padding(.vertical, 6)
     .background(Capsule().fill(Color.black.opacity(0.45)))
     .overlay(Capsule().strokeBorder(DS.goldDeep.opacity(0.7), lineWidth: 1))
+    .contentShape(Capsule())
+    .onTapGesture { action?() }
   }
 }
 

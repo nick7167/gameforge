@@ -27,6 +27,8 @@ struct HubView: View {
   @State private var hubScene: HubScene? // created once in onAppear
   @State private var toast: String?
   @State private var toastTask: Task<Void, Never>?
+  @State private var showPremiumShop = false
+  @StateObject private var purchaseService = PurchaseService()
   @Environment(\.scenePhase) private var scenePhase
 
   var body: some View {
@@ -54,10 +56,16 @@ struct HubView: View {
         hubScene = HubScene(squad: squadFigures)
       }
       model.refreshIdleEstimate()
+      purchaseService.configure(
+        apiKey: Bundle.main.object(forInfoDictionaryKey: "REVENUECAT_API_KEY") as? String,
+        onGemsGranted: { gems in model.grantGems(gems) })
     }
     .onChange(of: scenePhase) { _, phase in
       guard phase == .active else { return }
       model.refreshIdleEstimate()
+    }
+    .fullScreenCover(isPresented: $showPremiumShop) {
+      PremiumShopView(model: model, purchaseService: purchaseService, onDismiss: { showPremiumShop = false })
     }
   }
 
@@ -81,7 +89,7 @@ struct HubView: View {
     case .summon:
       SummonView(model: model)
     case .market:
-      ComingSoonView(title: "Market")
+      MarketView(model: model)
     case .more:
       ComingSoonView(title: "More")
     }
@@ -124,7 +132,7 @@ struct HubView: View {
     case .heroes:
       selectedTab = .heroes
     case .shop:
-      showToast("Premium shop coming in Task 8")
+      showPremiumShop = true
     case .locked(let label):
       showToast("\(label) — coming soon!")
     }
@@ -145,7 +153,9 @@ struct HubView: View {
           .foregroundColor(DS.textSecondary)
       }
       Spacer()
-      CurrencyChip(icon: "💎", value: model.profile.wallet.balance(of: .gems))
+      CurrencyChip(icon: "💎", value: model.profile.wallet.balance(of: .gems), showsPlus: true) {
+        showPremiumShop = true
+      }
       CurrencyChip(icon: "🪙", value: model.profile.wallet.balance(of: .gold))
       Button {
         showToast("Settings coming in Task 9")

@@ -68,4 +68,15 @@ final class AppSmokeTests: XCTestCase {
         let view = SummonRevealView(items: results, onDismiss: {})
         _ = view.body
     }
+
+    @MainActor func testMarketViewRenders() {
+        let model = EmberGameModel(profile: PlayerProfile.new())
+        _ = MarketView(model: model).body
+    }
+
+    @MainActor func testPremiumShopViewRenders() {
+        let model = EmberGameModel(profile: PlayerProfile.new())
+        let service = PurchaseService()
+        _ = PremiumShopView(model: model, purchaseService: service, onDismiss: {}).body
+    }
 }

@@ -158,8 +158,37 @@ final class EmberGameModel: ObservableObject {
 
   /// Test hook: grant gems without a purchase.
   func addGemsForTesting(_ amount: Int) {
+    grantGems(amount)
+  }
+
+  /// Grant gems (IAP fulfillment routed through the purchase service).
+  func grantGems(_ amount: Int) {
     session.grantGems(amount)
     syncProfile()
+  }
+
+  /// Test hook: grant gold without playing.
+  func grantGoldForTesting(_ amount: Int) {
+    session.grantCurrency(.gold, amount)
+    syncProfile()
+  }
+
+  // MARK: - Market
+
+  /// Buy a Market entry. Returns false when unaffordable / already claimed.
+  @discardableResult
+  func buyMarket(entryID: String) -> Bool {
+    let ok = session.buyMarket(entryID: entryID)
+    if ok {
+      syncProfile()
+      save()
+    }
+    return ok
+  }
+
+  /// Whether today's free Market item is still unclaimed.
+  func freeMarketClaimedToday() -> Bool {
+    session.freeMarketClaimedToday()
   }
 
   private func syncProfile() {
